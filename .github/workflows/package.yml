@@ -37,6 +37,9 @@ jobs:
           echo "VERSION=$version" >> "$GITHUB_ENV"
           echo "Version: $version"
 
+      - name: Allow publish script execution
+        run: chmod +x scripts/publish-artifacts.sh
+
       - name: Publish ${{ matrix.rid }}
         run: scripts/publish-artifacts.sh ${{ matrix.rid }}
 
