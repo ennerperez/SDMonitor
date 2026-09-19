@@ -45,8 +45,9 @@ GitVersion.
 
 ## Commands
 
-Running `sdmonitor` without arguments starts the dashboard with default values:
-`dashboard 1500`. If the Stream Deck HID handle is unavailable, SDMonitor keeps
+Running `sdmonitor` without arguments starts the dashboard and loads
+`dashboard-tiles.json` when present in the current directory or next to the
+executable. If the Stream Deck HID handle is unavailable, SDMonitor keeps
 running as a console dashboard instead of exiting.
 
 ```text
@@ -58,9 +59,13 @@ sdmonitor logo
 sdmonitor clear
 sdmonitor color <key 0-5> <r 0-255> <g 0-255> <b 0-255>
 sdmonitor watch
-sdmonitor dashboard [interval-ms] [frames]
+sdmonitor dashboard [config-path|interval-ms] [frames]
 sdmonitor layout-test
 ```
+
+Dashboard tile appearance is configured in `dashboard-tiles.json`. Each tile
+selects a `metric`, `position`, `title`, colors, text sizes, spacing, bottom
+progress bar height, and `refreshMilliseconds`.
 
 See [release docs](docs/RELEASE.md) and [stack docs](docs/STACK.md) for build
 and artifact details.

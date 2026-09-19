@@ -7,7 +7,7 @@ namespace SDMonitor
 {
     internal static class DashboardRunner
     {
-        public static void Run(MonitorMini deck, int intervalMilliseconds, int? frames)
+        public static void Run(MonitorMini deck, DashboardConfig config, int? frames)
         {
             LinuxHardwareSampler sampler = new();
             Console.WriteLine("Dashboard running.");
@@ -20,33 +20,53 @@ namespace SDMonitor
             };
 
             sampler.Sample();
-            if (cancellation.Token.WaitHandle.WaitOne(intervalMilliseconds))
+            if (cancellation.Token.WaitHandle.WaitOne(config.RefreshIntervalMilliseconds))
             {
                 return;
             }
 
             byte[][] lastImages = new byte[MonitorMiniConstants.KeyCount][];
+            DateTimeOffset[] lastRendered = new DateTimeOffset[MonitorMiniConstants.KeyCount];
             try
             {
                 int renderedFrames = 0;
                 while (!cancellation.IsCancellationRequested)
                 {
+                    DateTimeOffset now = DateTimeOffset.UtcNow;
                     DashboardMetric[] metrics = sampler.Sample();
-                    for (int key = 0; key < metrics.Length; key++)
+                    Dictionary<string, DashboardMetric> metricsByName = metrics.ToDictionary(
+                        metric => metric.Metric,
+                        StringComparer.OrdinalIgnoreCase);
+
+                    foreach (DashboardTile tile in config.Tiles)
                     {
-                        DashboardMetric metric = metrics[key];
-                        byte[] image = KeyTileRenderer.RenderTile(metric.Title, metric.Value, metric.Percent, metric.Accent);
+                        int key = tile.Position - 1;
+                        if (lastRendered[key] != default &&
+                            now - lastRendered[key] < TimeSpan.FromMilliseconds(tile.RefreshMilliseconds))
+                        {
+                            continue;
+                        }
+
+                        if (!metricsByName.TryGetValue(tile.Metric, out DashboardMetric? metric))
+                        {
+                            continue;
+                        }
+
+                        string title = string.IsNullOrWhiteSpace(tile.Title) ? metric.Title : tile.Title;
+                        byte[] image = KeyTileRenderer.RenderTile(title, metric.Value, metric.Percent, tile.Style);
                         if (lastImages[key] is not null && image.AsSpan().SequenceEqual(lastImages[key]))
                         {
+                            lastRendered[key] = now;
                             continue;
                         }
 
                         deck.SetKeyImage(key, image);
                         lastImages[key] = image;
+                        lastRendered[key] = now;
                         Thread.Sleep(15);
                     }
 
-                    PrintConsole(metrics);
+                    PrintConsole(config, metricsByName);
                     renderedFrames++;
 
                     if (frames.HasValue && renderedFrames >= frames.Value)
@@ -55,7 +75,7 @@ namespace SDMonitor
                         break;
                     }
 
-                    if (cancellation.Token.WaitHandle.WaitOne(intervalMilliseconds))
+                    if (cancellation.Token.WaitHandle.WaitOne(config.RefreshIntervalMilliseconds))
                     {
                         break;
                     }
@@ -69,7 +89,7 @@ namespace SDMonitor
             }
         }
 
-        public static void RunConsoleOnly(int intervalMilliseconds, int? frames)
+        public static void RunConsoleOnly(DashboardConfig config, int? frames)
         {
             LinuxHardwareSampler sampler = new();
             Console.WriteLine("Dashboard running without device.");
@@ -82,7 +102,7 @@ namespace SDMonitor
             };
 
             sampler.Sample();
-            if (cancellation.Token.WaitHandle.WaitOne(intervalMilliseconds))
+            if (cancellation.Token.WaitHandle.WaitOne(config.RefreshIntervalMilliseconds))
             {
                 return;
             }
@@ -91,7 +111,10 @@ namespace SDMonitor
             while (!cancellation.IsCancellationRequested)
             {
                 DashboardMetric[] metrics = sampler.Sample();
-                PrintConsole(metrics);
+                Dictionary<string, DashboardMetric> metricsByName = metrics.ToDictionary(
+                    metric => metric.Metric,
+                    StringComparer.OrdinalIgnoreCase);
+                PrintConsole(config, metricsByName);
                 renderedFrames++;
 
                 if (frames.HasValue && renderedFrames >= frames.Value)
@@ -100,7 +123,7 @@ namespace SDMonitor
                     break;
                 }
 
-                if (cancellation.Token.WaitHandle.WaitOne(intervalMilliseconds))
+                if (cancellation.Token.WaitHandle.WaitOne(config.RefreshIntervalMilliseconds))
                 {
                     break;
                 }
@@ -110,10 +133,19 @@ namespace SDMonitor
             Console.WriteLine("Console dashboard stopped.");
         }
 
-        private static void PrintConsole(IReadOnlyList<DashboardMetric> metrics)
+        private static void PrintConsole(DashboardConfig config, IReadOnlyDictionary<string, DashboardMetric> metricsByName)
         {
             Console.Write("\r");
-            Console.Write(string.Join("  ", metrics.Select(metric => $"{metric.Title}:{metric.Value}")).PadRight(80));
+            Console.Write(string.Join("  ", config.Tiles.Select(tile =>
+            {
+                if (!metricsByName.TryGetValue(tile.Metric, out DashboardMetric? metric))
+                {
+                    return $"{tile.Title}:N/A";
+                }
+
+                string title = string.IsNullOrWhiteSpace(tile.Title) ? metric.Title : tile.Title;
+                return $"{title}:{metric.Value}";
+            })).PadRight(80));
         }
     }
 }
