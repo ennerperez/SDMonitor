@@ -1,2 +1,2 @@
 # SDMonitor
-Stream Deck Monitor
+SDMonitor
