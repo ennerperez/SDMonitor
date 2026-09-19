@@ -1,0 +1,23 @@
+<Solution>
+  <Folder Name="/.files/">
+    <File Path=".aiignore" />
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="dotnet-tools.json" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="NuGet.config" />
+    <File Path="README.md" />
+    <File Path="testconfig.json" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/SDMonitor.Cli/SDMonitor.Cli.csproj" />
+    <Project Path="src/SDMonitor.Control/SDMonitor.Control.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SDMonitor.Control.Tests/SDMonitor.Control.Tests.csproj" />
+  </Folder>
+</Solution>
