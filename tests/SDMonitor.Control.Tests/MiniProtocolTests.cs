@@ -11,7 +11,7 @@ namespace SDMonitor.Control.Tests
         {
             byte[] report = MiniProtocol.BrightnessReport(30);
 
-            Assert.Equal(SdMonitorMiniConstants.FeatureReportLength, report.Length);
+            Assert.Equal(MonitorMiniConstants.FeatureReportLength, report.Length);
             Assert.Equal(0x05, report[0x00]);
             Assert.Equal(0x55, report[0x01]);
             Assert.Equal(0xAA, report[0x02]);
@@ -36,7 +36,7 @@ namespace SDMonitor.Control.Tests
         [Fact]
         public void ParseKeyStatesReadsFirstSixPayloadBytes()
         {
-            byte[] input = new byte[SdMonitorMiniConstants.InputReportLength];
+            byte[] input = new byte[MonitorMiniConstants.InputReportLength];
             input[0] = 0x01;
             input[1] = 0x01;
             input[4] = 0x01;
@@ -71,8 +71,8 @@ namespace SDMonitor.Control.Tests
 
             IReadOnlyList<byte[]> reports = MiniProtocol.ImageUploadReports(2, bmp, showImage: true);
 
-            Assert.All(reports, report => Assert.Equal(SdMonitorMiniConstants.OutputReportLength, report.Length));
-            Assert.Equal((byte)'B', reports[0][SdMonitorMiniConstants.ImagePayloadOffset]);
+            Assert.All(reports, report => Assert.Equal(MonitorMiniConstants.OutputReportLength, report.Length));
+            Assert.Equal((byte)'B', reports[0][MonitorMiniConstants.ImagePayloadOffset]);
             Assert.Equal(0x02, reports[0][0x00]);
             Assert.Equal(0x01, reports[0][0x01]);
             Assert.Equal(0x00, reports[0][0x02]);

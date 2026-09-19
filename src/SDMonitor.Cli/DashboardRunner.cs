@@ -8,7 +8,7 @@ namespace SDMonitor.Cli
 {
     internal static class DashboardRunner
     {
-        public static void Run(SdMonitorMini deck, int intervalMilliseconds, int? frames)
+        public static void Run(MonitorMini deck, int intervalMilliseconds, int? frames)
         {
             LinuxHardwareSampler sampler = new();
             Console.WriteLine("Hardware dashboard running. Press Ctrl+C to stop.");
@@ -26,7 +26,7 @@ namespace SDMonitor.Cli
                 return;
             }
 
-            byte[][] lastImages = new byte[SdMonitorMiniConstants.KeyCount][];
+            byte[][] lastImages = new byte[MonitorMiniConstants.KeyCount][];
             try
             {
                 int renderedFrames = 0;

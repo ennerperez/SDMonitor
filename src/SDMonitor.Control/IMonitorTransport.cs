@@ -2,9 +2,9 @@ using System;
 
 namespace SDMonitor.Control
 {
-    public interface ISdMonitorTransport : IDisposable
+    public interface IMonitorTransport : IDisposable
     {
-        SdMonitorDeviceInfo DeviceInfo { get; }
+        MonitorDeviceInfo DeviceInfo { get; }
 
         void WriteOutputReport(ReadOnlySpan<byte> report);
 

@@ -19,40 +19,40 @@ try
             ListDevices();
             return 0;
         case "info":
-            using (SdMonitorMini deck = SdMonitorMini.OpenFirst())
+            using (MonitorMini deck = MonitorMini.OpenFirst())
             {
                 PrintInfo(deck);
             }
             return 0;
         case "brightness":
-            using (SdMonitorMini deck = SdMonitorMini.OpenFirst())
+            using (MonitorMini deck = MonitorMini.OpenFirst())
             {
                 deck.SetBrightness(ParseByte(args, 1, "percent", 0, 100));
             }
             return 0;
         case "sleep":
-            using (SdMonitorMini deck = SdMonitorMini.OpenFirst())
+            using (MonitorMini deck = MonitorMini.OpenFirst())
             {
                 int seconds = ParseInt(args, 1, "seconds", 0, int.MaxValue);
                 deck.SetSleepDuration(TimeSpan.FromSeconds(seconds));
             }
             return 0;
         case "logo":
-            using (SdMonitorMini deck = SdMonitorMini.OpenFirst())
+            using (MonitorMini deck = MonitorMini.OpenFirst())
             {
                 deck.ShowLogo();
             }
             return 0;
         case "clear":
-            using (SdMonitorMini deck = SdMonitorMini.OpenFirst())
+            using (MonitorMini deck = MonitorMini.OpenFirst())
             {
                 deck.ClearKeys();
             }
             return 0;
         case "color":
-            using (SdMonitorMini deck = SdMonitorMini.OpenFirst())
+            using (MonitorMini deck = MonitorMini.OpenFirst())
             {
-                int key = ParseInt(args, 1, "key", 0, SdMonitorMiniConstants.KeyCount - 1);
+                int key = ParseInt(args, 1, "key", 0, MonitorMiniConstants.KeyCount - 1);
                 byte red = ParseByte(args, 2, "red", 0, 255);
                 byte green = ParseByte(args, 3, "green", 0, 255);
                 byte blue = ParseByte(args, 4, "blue", 0, 255);
@@ -60,13 +60,13 @@ try
             }
             return 0;
         case "watch":
-            using (SdMonitorMini deck = SdMonitorMini.OpenFirst())
+            using (MonitorMini deck = MonitorMini.OpenFirst())
             {
                 Watch(deck);
             }
             return 0;
         case "dashboard":
-            using (SdMonitorMini deck = SdMonitorMini.OpenFirst())
+            using (MonitorMini deck = MonitorMini.OpenFirst())
             {
                 int intervalMilliseconds = args.Length > 1
                     ? ParseInt(args, 1, "interval-ms", 250, 60000)
@@ -78,7 +78,7 @@ try
             }
             return 0;
         case "layout-test":
-            using (SdMonitorMini deck = SdMonitorMini.OpenFirst())
+            using (MonitorMini deck = MonitorMini.OpenFirst())
             {
                 RenderLayoutTest(deck);
             }
@@ -97,22 +97,22 @@ catch (Exception ex)
 
 static void ListDevices()
 {
-    IReadOnlyList<SdMonitorDeviceInfo> devices = SdMonitorMini.ListDevices();
+    IReadOnlyList<MonitorDeviceInfo> devices = MonitorMini.ListDevices();
     if (devices.Count == 0)
     {
         Console.WriteLine("No Stream Deck Mini HID devices found.");
         return;
     }
 
-    foreach (SdMonitorDeviceInfo device in devices)
+    foreach (MonitorDeviceInfo device in devices)
     {
         Console.WriteLine($"{device.ProductName} {device.VendorId:X4}:{device.ProductId:X4} serial={device.SerialNumber} path={device.DevicePath}");
     }
 }
 
-static void PrintInfo(SdMonitorMini deck)
+static void PrintInfo(MonitorMini deck)
 {
-    SdMonitorDeviceInfo info = deck.DeviceInfo;
+    MonitorDeviceInfo info = deck.DeviceInfo;
     Console.WriteLine($"Product: {info.ProductName}");
     Console.WriteLine($"Manufacturer: {info.Manufacturer}");
     Console.WriteLine($"VID/PID: {info.VendorId:X4}:{info.ProductId:X4}");
@@ -123,7 +123,7 @@ static void PrintInfo(SdMonitorMini deck)
     Console.WriteLine($"Firmware AP1: {deck.GetFirmwareVersion(0xA2)}");
 }
 
-static void Watch(SdMonitorMini deck)
+static void Watch(MonitorMini deck)
 {
     Console.WriteLine("Watching key changes. Press Ctrl+C to stop.");
     while (true)
@@ -138,7 +138,7 @@ static void Watch(SdMonitorMini deck)
     }
 }
 
-static void RenderLayoutTest(SdMonitorMini deck)
+static void RenderLayoutTest(MonitorMini deck)
 {
     DashboardMetric[] labels =
     [

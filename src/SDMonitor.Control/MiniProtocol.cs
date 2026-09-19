@@ -70,7 +70,7 @@ namespace SDMonitor.Control
 
         public static IReadOnlyList<MiniKeyState> ParseKeyStates(ReadOnlySpan<byte> inputReport)
         {
-            if (inputReport.Length < SdMonitorMiniConstants.InputReportLength)
+            if (inputReport.Length < MonitorMiniConstants.InputReportLength)
             {
                 throw new ArgumentException("Input report must be at least 65 bytes.", nameof(inputReport));
             }
@@ -80,7 +80,7 @@ namespace SDMonitor.Control
                 throw new ArgumentException("Input report ID must be 0x01.", nameof(inputReport));
             }
 
-            MiniKeyState[] states = new MiniKeyState[SdMonitorMiniConstants.KeyCount];
+            MiniKeyState[] states = new MiniKeyState[MonitorMiniConstants.KeyCount];
             for (int key = 0; key < states.Length; key++)
             {
                 states[key] = new MiniKeyState(key, inputReport[key + 1] != 0x00);
@@ -91,9 +91,9 @@ namespace SDMonitor.Control
 
         public static byte[] SolidBmpKeyImage(byte red, byte green, byte blue)
         {
-            RgbColor[] pixels = new RgbColor[SdMonitorMiniConstants.KeyImageWidth * SdMonitorMiniConstants.KeyImageHeight];
+            RgbColor[] pixels = new RgbColor[MonitorMiniConstants.KeyImageWidth * MonitorMiniConstants.KeyImageHeight];
             Array.Fill(pixels, new RgbColor(red, green, blue));
-            return BmpFromPixels(pixels, SdMonitorMiniConstants.KeyImageWidth, SdMonitorMiniConstants.KeyImageHeight);
+            return BmpFromPixels(pixels, MonitorMiniConstants.KeyImageWidth, MonitorMiniConstants.KeyImageHeight);
         }
 
         public static byte[] BmpFromPixels(ReadOnlySpan<RgbColor> pixels, int width, int height)
@@ -148,7 +148,7 @@ namespace SDMonitor.Control
 
         public static IReadOnlyList<byte[]> ImageUploadReports(int keyIndex, ReadOnlySpan<byte> bmpBytes, bool showImage)
         {
-            if (keyIndex is < 0 or >= SdMonitorMiniConstants.KeyCount)
+            if (keyIndex is < 0 or >= MonitorMiniConstants.KeyCount)
             {
                 throw new ArgumentOutOfRangeException(nameof(keyIndex), keyIndex, "Key index must be between 0 and 5.");
             }
@@ -158,13 +158,13 @@ namespace SDMonitor.Control
                 throw new ArgumentException("BMP image data cannot be empty.", nameof(bmpBytes));
             }
 
-            int chunkCount = (bmpBytes.Length + SdMonitorMiniConstants.ImageChunkPayloadLength - 1) /
-                             SdMonitorMiniConstants.ImageChunkPayloadLength;
+            int chunkCount = (bmpBytes.Length + MonitorMiniConstants.ImageChunkPayloadLength - 1) /
+                             MonitorMiniConstants.ImageChunkPayloadLength;
             byte[][] reports = new byte[chunkCount][];
 
             for (int index = 0; index < reports.Length; index++)
             {
-                byte[] report = new byte[SdMonitorMiniConstants.OutputReportLength];
+                byte[] report = new byte[MonitorMiniConstants.OutputReportLength];
                 report[0x00] = 0x02;
                 report[0x01] = 0x01;
                 report[0x02] = checked((byte)index);
@@ -172,9 +172,9 @@ namespace SDMonitor.Control
                 report[0x04] = showImage ? (byte)0x01 : (byte)0x00;
                 report[0x05] = checked((byte)(keyIndex + 1));
 
-                int sourceOffset = index * SdMonitorMiniConstants.ImageChunkPayloadLength;
-                int sourceLength = Math.Min(SdMonitorMiniConstants.ImageChunkPayloadLength, bmpBytes.Length - sourceOffset);
-                bmpBytes.Slice(sourceOffset, sourceLength).CopyTo(report.AsSpan(SdMonitorMiniConstants.ImagePayloadOffset));
+                int sourceOffset = index * MonitorMiniConstants.ImageChunkPayloadLength;
+                int sourceLength = Math.Min(MonitorMiniConstants.ImageChunkPayloadLength, bmpBytes.Length - sourceOffset);
+                bmpBytes.Slice(sourceOffset, sourceLength).CopyTo(report.AsSpan(MonitorMiniConstants.ImagePayloadOffset));
                 reports[index] = report;
             }
 
@@ -183,7 +183,7 @@ namespace SDMonitor.Control
 
         private static byte[] NewFeatureReport(byte reportId, byte command = 0x00)
         {
-            byte[] report = new byte[SdMonitorMiniConstants.FeatureReportLength];
+            byte[] report = new byte[MonitorMiniConstants.FeatureReportLength];
             report[0] = reportId;
             report[1] = command;
             return report;

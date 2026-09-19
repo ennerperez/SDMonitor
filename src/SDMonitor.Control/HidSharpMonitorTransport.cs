@@ -5,14 +5,14 @@ using HidSharp;
 
 namespace SDMonitor.Control
 {
-    public sealed class HidSharpSdMonitorTransport : ISdMonitorTransport
+    public sealed class HidSharpMonitorTransport : IMonitorTransport
     {
         private readonly HidStream _stream;
 
-        private HidSharpSdMonitorTransport(HidDevice device, HidStream stream)
+        private HidSharpMonitorTransport(HidDevice device, HidStream stream)
         {
             _stream = stream;
-            DeviceInfo = new SdMonitorDeviceInfo(
+            DeviceInfo = new MonitorDeviceInfo(
                 device.GetProductName(),
                 device.GetManufacturer(),
                 device.GetSerialNumber(),
@@ -21,14 +21,14 @@ namespace SDMonitor.Control
                 device.DevicePath);
         }
 
-        public SdMonitorDeviceInfo DeviceInfo { get; }
+        public MonitorDeviceInfo DeviceInfo { get; }
 
-        public static IReadOnlyList<SdMonitorDeviceInfo> ListDevices()
+        public static IReadOnlyList<MonitorDeviceInfo> ListDevices()
         {
             return DeviceList.Local
-                .GetHidDevices(SdMonitorMiniConstants.VendorId)
+                .GetHidDevices(MonitorMiniConstants.VendorId)
                 .Where(IsSupportedMini)
-                .Select(device => new SdMonitorDeviceInfo(
+                .Select(device => new MonitorDeviceInfo(
                     SafeGet(device.GetProductName),
                     SafeGet(device.GetManufacturer),
                     SafeGet(device.GetSerialNumber),
@@ -38,10 +38,10 @@ namespace SDMonitor.Control
                 .ToArray();
         }
 
-        public static HidSharpSdMonitorTransport OpenFirst()
+        public static HidSharpMonitorTransport OpenFirst()
         {
             HidDevice? device = DeviceList.Local
-                .GetHidDevices(SdMonitorMiniConstants.VendorId)
+                .GetHidDevices(MonitorMiniConstants.VendorId)
                 .Where(IsSupportedMini)
                 .FirstOrDefault();
 
@@ -58,7 +58,7 @@ namespace SDMonitor.Control
             stream.ReadTimeout = 50;
             stream.WriteTimeout = 1000;
 
-            return new HidSharpSdMonitorTransport(device, stream);
+            return new HidSharpMonitorTransport(device, stream);
         }
 
         public void WriteOutputReport(ReadOnlySpan<byte> report)
@@ -103,7 +103,7 @@ namespace SDMonitor.Control
 
         private static bool IsSupportedMini(HidDevice device)
         {
-            return Enumerable.Contains(SdMonitorMiniConstants.SupportedProductIds, device.ProductID);
+            return Enumerable.Contains(MonitorMiniConstants.SupportedProductIds, device.ProductID);
         }
 
         private static string SafeGet(Func<string> valueFactory)

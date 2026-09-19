@@ -1,6 +1,6 @@
 namespace SDMonitor.Control
 {
-    public sealed record SdMonitorDeviceInfo(
+    public sealed record MonitorDeviceInfo(
         string ProductName,
         string Manufacturer,
         string SerialNumber,

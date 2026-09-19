@@ -1,6 +1,6 @@
 namespace SDMonitor.Control
 {
-    public static class SdMonitorMiniConstants
+    public static class MonitorMiniConstants
     {
         public const int VendorId = 0x0FD9;
         public const int ProductId = 0x0063;

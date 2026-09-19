@@ -6,8 +6,8 @@ namespace SDMonitor.Control
 {
     public static class KeyTileRenderer
     {
-        private const int Width = SdMonitorMiniConstants.KeyImageWidth;
-        private const int Height = SdMonitorMiniConstants.KeyImageHeight;
+        private const int Width = MonitorMiniConstants.KeyImageWidth;
+        private const int Height = MonitorMiniConstants.KeyImageHeight;
 
         private static readonly Dictionary<char, string[]> s_font = new()
         {

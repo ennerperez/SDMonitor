@@ -4,27 +4,27 @@ using System.Threading;
 
 namespace SDMonitor.Control
 {
-    public sealed class SdMonitorMini : IDisposable
+    public sealed class MonitorMini : IDisposable
     {
         private const int ReportWriteDelayMilliseconds = 2;
 
-        private readonly ISdMonitorTransport _transport;
+        private readonly IMonitorTransport _transport;
 
-        public SdMonitorMini(ISdMonitorTransport transport)
+        public MonitorMini(IMonitorTransport transport)
         {
             _transport = transport;
         }
 
-        public SdMonitorDeviceInfo DeviceInfo => _transport.DeviceInfo;
+        public MonitorDeviceInfo DeviceInfo => _transport.DeviceInfo;
 
-        public static IReadOnlyList<SdMonitorDeviceInfo> ListDevices()
+        public static IReadOnlyList<MonitorDeviceInfo> ListDevices()
         {
-            return HidSharpSdMonitorTransport.ListDevices();
+            return HidSharpMonitorTransport.ListDevices();
         }
 
-        public static SdMonitorMini OpenFirst()
+        public static MonitorMini OpenFirst()
         {
-            return new SdMonitorMini(HidSharpSdMonitorTransport.OpenFirst());
+            return new MonitorMini(HidSharpMonitorTransport.OpenFirst());
         }
 
         public void SetBrightness(byte percent)
@@ -44,20 +44,20 @@ namespace SDMonitor.Control
 
         public string GetSerialNumber()
         {
-            byte[] report = _transport.GetFeatureReport(0x03, SdMonitorMiniConstants.FeatureReportLength);
+            byte[] report = _transport.GetFeatureReport(0x03, MonitorMiniConstants.FeatureReportLength);
             return MiniProtocol.ReadAsciiReportString(report, 0x05);
         }
 
         public string GetFirmwareVersion(byte reportId = 0xA1)
         {
             byte[] request = MiniProtocol.FirmwareRequestReport(reportId);
-            byte[] report = _transport.GetFeatureReport(request[0], SdMonitorMiniConstants.FeatureReportLength);
+            byte[] report = _transport.GetFeatureReport(request[0], MonitorMiniConstants.FeatureReportLength);
             return MiniProtocol.ReadAsciiReportString(report, 0x05);
         }
 
         public IReadOnlyList<MiniKeyState>? PollKeys(int timeoutMilliseconds = 50)
         {
-            Span<byte> report = stackalloc byte[SdMonitorMiniConstants.InputReportLength];
+            Span<byte> report = stackalloc byte[MonitorMiniConstants.InputReportLength];
             int read = _transport.ReadInputReport(report, timeoutMilliseconds);
             return read == 0 ? null : MiniProtocol.ParseKeyStates(report);
         }
@@ -78,7 +78,7 @@ namespace SDMonitor.Control
 
         public void ClearKeys()
         {
-            for (int key = 0; key < SdMonitorMiniConstants.KeyCount; key++)
+            for (int key = 0; key < MonitorMiniConstants.KeyCount; key++)
             {
                 SetKeyColor(key, 0, 0, 0);
             }
