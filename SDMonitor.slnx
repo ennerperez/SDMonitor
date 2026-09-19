@@ -6,18 +6,23 @@
     <File Path=".gitignore" />
     <File Path="AGENTS.md" />
     <File Path="Directory.Build.props" />
-    <File Path="dotnet-tools.json" />
     <File Path="global.json" />
     <File Path="LICENSE" />
     <File Path="NuGet.config" />
     <File Path="README.md" />
     <File Path="testconfig.json" />
   </Folder>
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/workflow/">
+    <File Path=".github\workflows\build.yml" />
+    <File Path=".github\workflows\ci.yml" />
+    <File Path=".github\workflows\package.yml" />
+    <File Path=".github\workflows\release.yml" />
+  </Folder>
   <Folder Name="/src/">
-    <Project Path="src/SDMonitor.Cli/SDMonitor.Cli.csproj" />
-    <Project Path="src/SDMonitor.Control/SDMonitor.Control.csproj" />
+    <Project Path="src/SDMonitor/SDMonitor.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/SDMonitor.Control.Tests/SDMonitor.Control.Tests.csproj" />
+    <Project Path="tests/SDMonitor.Tests/SDMonitor.Tests.csproj" />
   </Folder>
 </Solution>

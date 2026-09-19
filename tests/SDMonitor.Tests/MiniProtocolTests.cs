@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
-namespace SDMonitor.Control.Tests
+namespace SDMonitor.Tests
 {
     public sealed class MiniProtocolTests
     {

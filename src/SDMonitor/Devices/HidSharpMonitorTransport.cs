@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HidSharp;
 
-namespace SDMonitor.Control
+namespace SDMonitor
 {
     public sealed class HidSharpMonitorTransport : IMonitorTransport
     {

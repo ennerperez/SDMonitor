@@ -1,6 +1,4 @@
-using SDMonitor.Control;
-
-namespace SDMonitor.Cli
+namespace SDMonitor
 {
     internal sealed record DashboardMetric(
         string Title,

@@ -1,4 +1,4 @@
-namespace SDMonitor.Control
+namespace SDMonitor
 {
     public readonly record struct RgbColor(byte Red, byte Green, byte Blue);
 }

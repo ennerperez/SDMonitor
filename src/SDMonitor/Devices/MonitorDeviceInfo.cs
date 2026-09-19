@@ -1,4 +1,4 @@
-namespace SDMonitor.Control
+namespace SDMonitor
 {
     public sealed record MonitorDeviceInfo(
         string ProductName,

@@ -2,10 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using SDMonitor.Control;
-using SDMonitor.Cli;
+using SDMonitor;
 
-if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
+if (args.Length > 0 && args[0] is "-h" or "--help" or "help")
 {
     PrintHelp();
     return 0;
@@ -13,7 +12,8 @@ if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
 
 try
 {
-    switch (args[0])
+    string command = args.Length == 0 ? "dashboard" : args[0];
+    switch (command)
     {
         case "list":
             ListDevices();
@@ -66,16 +66,7 @@ try
             }
             return 0;
         case "dashboard":
-            using (MonitorMini deck = MonitorMini.OpenFirst())
-            {
-                int intervalMilliseconds = args.Length > 1
-                    ? ParseInt(args, 1, "interval-ms", 250, 60000)
-                    : 1500;
-                int? frames = args.Length > 2
-                    ? ParseInt(args, 2, "frames", 1, int.MaxValue)
-                    : null;
-                DashboardRunner.Run(deck, intervalMilliseconds, frames);
-            }
+            RunDashboard(args);
             return 0;
         case "layout-test":
             using (MonitorMini deck = MonitorMini.OpenFirst())
@@ -84,8 +75,8 @@ try
             }
             return 0;
         default:
-            Console.Error.WriteLine($"Unknown command: {args[0]}");
-            PrintHelp();
+            Console.Error.WriteLine($"Unknown command: {command}");
+            Console.Error.WriteLine("Run 'sdmonitor --help' for usage.");
             return 2;
     }
 }
@@ -135,6 +126,27 @@ static void Watch(MonitorMini deck)
         }
 
         Console.WriteLine(string.Join(' ', states.Select(state => $"{state.KeyIndex}:{(state.IsPressed ? "down" : "up")}")));
+    }
+}
+
+static void RunDashboard(string[] args)
+{
+    int intervalMilliseconds = args.Length > 1
+        ? ParseInt(args, 1, "interval-ms", 250, 60000)
+        : 1500;
+    int? frames = args.Length > 2
+        ? ParseInt(args, 2, "frames", 1, int.MaxValue)
+        : null;
+
+    try
+    {
+        using MonitorMini deck = MonitorMini.OpenFirst();
+        DashboardRunner.Run(deck, intervalMilliseconds, frames);
+    }
+    catch (InvalidOperationException ex)
+    {
+        Console.Error.WriteLine($"Device unavailable: {ex.Message}");
+        DashboardRunner.RunConsoleOnly(intervalMilliseconds, frames);
     }
 }
 

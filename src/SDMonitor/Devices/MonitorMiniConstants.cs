@@ -1,4 +1,4 @@
-namespace SDMonitor.Control
+namespace SDMonitor
 {
     public static class MonitorMiniConstants
     {

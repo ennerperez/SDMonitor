@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using SDMonitor.Control;
 
-namespace SDMonitor.Cli
+namespace SDMonitor
 {
     internal sealed class LinuxHardwareSampler
     {

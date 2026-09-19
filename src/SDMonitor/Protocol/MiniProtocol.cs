@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SDMonitor.Control
+namespace SDMonitor
 {
     public static class MiniProtocol
     {

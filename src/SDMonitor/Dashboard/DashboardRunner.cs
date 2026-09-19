@@ -2,16 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using SDMonitor.Control;
 
-namespace SDMonitor.Cli
+namespace SDMonitor
 {
     internal static class DashboardRunner
     {
         public static void Run(MonitorMini deck, int intervalMilliseconds, int? frames)
         {
             LinuxHardwareSampler sampler = new();
-            Console.WriteLine("Hardware dashboard running. Press Ctrl+C to stop.");
+            Console.WriteLine("Dashboard running.");
 
             using CancellationTokenSource cancellation = new();
             Console.CancelKeyPress += (_, eventArgs) =>
@@ -66,8 +65,49 @@ namespace SDMonitor.Cli
             {
                 deck.ClearKeys();
                 Console.WriteLine();
-                Console.WriteLine("Dashboard stopped. Keys cleared.");
+                Console.WriteLine("Dashboard stopped.");
             }
+        }
+
+        public static void RunConsoleOnly(int intervalMilliseconds, int? frames)
+        {
+            LinuxHardwareSampler sampler = new();
+            Console.WriteLine("Dashboard running without device.");
+
+            using CancellationTokenSource cancellation = new();
+            Console.CancelKeyPress += (_, eventArgs) =>
+            {
+                eventArgs.Cancel = true;
+                cancellation.Cancel();
+            };
+
+            sampler.Sample();
+            if (cancellation.Token.WaitHandle.WaitOne(intervalMilliseconds))
+            {
+                return;
+            }
+
+            int renderedFrames = 0;
+            while (!cancellation.IsCancellationRequested)
+            {
+                DashboardMetric[] metrics = sampler.Sample();
+                PrintConsole(metrics);
+                renderedFrames++;
+
+                if (frames.HasValue && renderedFrames >= frames.Value)
+                {
+                    Console.WriteLine();
+                    break;
+                }
+
+                if (cancellation.Token.WaitHandle.WaitOne(intervalMilliseconds))
+                {
+                    break;
+                }
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Console dashboard stopped.");
         }
 
         private static void PrintConsole(IReadOnlyList<DashboardMetric> metrics)
