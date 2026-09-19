@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      skip-package:
+        description: Use artifacts already created by this workflow run.
+        required: false
+        type: boolean
+        default: false
+      tag:
+        description: Release tag. Defaults to the current ref name.
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag.
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    if: ${{ inputs['skip-package'] != true }}
+    uses: ./.github/workflows/package.yml
+
+  release:
+    name: Publish GitHub Release
+    needs: package
+    if: ${{ always() && (needs.package.result == 'success' || needs.package.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sdmonitor-*
+          path: artifacts/release
+          merge-multiple: true
+
+      - name: Publish release assets
+        shell: bash
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --title "$RELEASE_TAG" \
+              --notes "SDMonitor $RELEASE_TAG"
+          fi
+
+          gh release upload "$RELEASE_TAG" artifacts/release/* --clobber

@@ -1,0 +1,48 @@
+name: Package
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  package:
+    name: Package ${{ matrix.rid }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid:
+          - win-x64
+          - linux-x64
+          - osx-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          version="$(dotnet tool run dotnet-gitversion -- /output json /showvariable SemVer /nocache)"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "Version: $version"
+
+      - name: Publish ${{ matrix.rid }}
+        run: scripts/publish-artifacts.sh ${{ matrix.rid }}
+
+      - name: Upload ${{ matrix.rid }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdmonitor-${{ env.VERSION }}-${{ matrix.rid }}
+          path: artifacts/dist/sdmonitor-${{ env.VERSION }}-${{ matrix.rid }}*
+          if-no-files-found: error

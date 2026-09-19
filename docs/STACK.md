@@ -4,7 +4,7 @@
 
 - .NET 10
 - C#
-- Console CLI plus class library
+- Single console project with tests in a separate test project
 
 ## Device Access
 
@@ -24,11 +24,22 @@
 ## Dashboard Notes
 
 - CLI command: `dashboard [interval-ms] [frames]`.
+- Running the CLI without arguments starts `dashboard` with the default interval.
+- If the Stream Deck HID handle cannot be opened, dashboard mode falls back to console output.
 - Dashboard maps keys to CPU, RAM, GPU, root disk, network upload, and network download.
 - Linux metrics come from `/proc/stat`, `/proc/meminfo`, `/proc/net/dev`, and `DriveInfo`.
 - GPU usage uses `nvidia-smi` when present; otherwise tile shows `N/A`.
 - Tile renderer is pure C# pixel drawing; no `System.Drawing` dependency.
 - Network upload/download bars auto-scale to the peak rate observed during the current dashboard run.
+
+## Release Notes
+
+- GitVersion generates artifact and assembly versions from Git history.
+- Publish target is the unified `src/SDMonitor/SDMonitor.csproj`.
+- Release artifacts are self-contained single-file executables.
+- Supported runtime identifiers: `win-x64`, `linux-x64`, and `osx-arm64`.
+- Local publish scripts write distributable files to `artifacts/dist/`.
+- GitHub Actions is split into `ci.yml`, `build.yml`, `package.yml`, and `release.yml`.
 
 ## Current Environment Notes
 
