@@ -51,7 +51,9 @@ jobs:
         id: coverage_gate
         if: steps.test.outcome == 'success'
         continue-on-error: true
-        run: scripts/check-coverage.sh "$COVERAGE_FILE"
+        run: |
+          chmod +x scripts/check-coverage.sh
+          scripts/check-coverage.sh "$COVERAGE_FILE"
 
       - name: Build PR summary
         if: always()
