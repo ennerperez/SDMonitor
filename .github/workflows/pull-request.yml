@@ -1,0 +1,111 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  tests:
+    name: Tests and coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install coverage tool
+        run: dotnet tool install dotnet-coverage --tool-path ./.tools
+
+      - name: Run tests with coverage
+        run: >
+          ./.tools/dotnet-coverage collect
+          --output artifacts/coverage/cobertura.xml
+          --output-format cobertura
+          "dotnet run --project tests/SDMonitor.Tests/SDMonitor.Tests.csproj --configuration Release"
+
+      - name: Read coverage
+        run: |
+          ENFORCE_COVERAGE_THRESHOLD=false bash scripts/check-coverage.sh artifacts/coverage/cobertura.xml
+          cat artifacts/coverage/coverage.env >> "$GITHUB_ENV"
+
+      - name: Write coverage summary
+        run: |
+          {
+            echo "### Coverage"
+            echo ""
+            echo "- Line coverage: ${COVERAGE_PERCENT}%"
+            echo "- Branch coverage: ${BRANCH_COVERAGE_PERCENT}%"
+            echo "- Minimum required: ${MINIMUM_COVERAGE}%"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment coverage on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          COVERAGE_PERCENT: ${{ env.COVERAGE_PERCENT }}
+          BRANCH_COVERAGE_PERCENT: ${{ env.BRANCH_COVERAGE_PERCENT }}
+          MINIMUM_COVERAGE: ${{ env.MINIMUM_COVERAGE }}
+        with:
+          script: |
+            const marker = '<!-- sdmonitor-coverage -->';
+            const coverage = Number(process.env.COVERAGE_PERCENT || 0);
+            const minimum = Number(process.env.MINIMUM_COVERAGE || 85);
+            const status = coverage >= minimum ? 'passed' : 'failed';
+            const body = `${marker}
+            ### Coverage ${status}
+
+            - Line coverage: **${process.env.COVERAGE_PERCENT}%**
+            - Branch coverage: **${process.env.BRANCH_COVERAGE_PERCENT}%**
+            - Minimum required: **${process.env.MINIMUM_COVERAGE}%**
+
+            Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find(comment => comment.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+      - name: Enforce coverage threshold
+        run: |
+          awk -v coverage="$COVERAGE_PERCENT" -v minimum="$MINIMUM_COVERAGE" 'BEGIN {
+            printf "COVERAGE: %.2f%%\n", coverage;
+            if (coverage + 0 < minimum + 0) {
+              printf "Coverage %.2f%% is below required %.2f%%.\n", coverage, minimum > "/dev/stderr";
+              exit 1;
+            }
+          }'
