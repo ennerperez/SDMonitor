@@ -3,10 +3,6 @@ name: Build
 on:
   workflow_call:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-      - develop
 
 jobs:
   build:
@@ -31,4 +27,4 @@ jobs:
         run: dotnet build SDMonitor.slnx --configuration Release
 
       - name: Test
-        run: dotnet test SDMonitor.slnx --configuration Release --no-build
+        run: dotnet test --solution SDMonitor.slnx --configuration Release --no-build

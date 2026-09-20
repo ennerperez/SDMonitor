@@ -8,6 +8,13 @@
         "dotnet-gitversion"
       ],
       "rollForward": false
+    },
+    "dotnet-coverage": {
+      "version": "18.11.2",
+      "commands": [
+        "dotnet-coverage"
+      ],
+      "rollForward": false
     }
   }
 }

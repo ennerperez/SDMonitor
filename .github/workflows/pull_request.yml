@@ -1,0 +1,114 @@
+name: Pull Request
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  MINIMUM_COVERAGE: "85"
+  COVERAGE_FILE: artifacts/coverage/cobertura.xml
+
+jobs:
+  test:
+    name: Test and coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Build
+        run: dotnet build SDMonitor.slnx --configuration Release
+
+      - name: Test with coverage
+        id: test
+        continue-on-error: true
+        run: >
+          dotnet dotnet-coverage collect
+          "dotnet test --solution SDMonitor.slnx --configuration Release --no-build --results-directory artifacts/test-results"
+          --output "$COVERAGE_FILE"
+          --output-format cobertura
+
+      - name: Check coverage quality gate
+        id: coverage_gate
+        if: steps.test.outcome == 'success'
+        continue-on-error: true
+        run: scripts/check-coverage.sh "$COVERAGE_FILE"
+
+      - name: Build PR summary
+        if: always()
+        run: |
+          mkdir -p artifacts/coverage
+
+          test_status="passed"
+          coverage_status="not run"
+          coverage_percent="N/A"
+          branch_coverage_percent="N/A"
+          minimum_coverage="$MINIMUM_COVERAGE"
+
+          if [ "${{ steps.test.outcome }}" != "success" ]; then
+            test_status="failed"
+          fi
+
+          if [ -f artifacts/coverage/coverage.env ]; then
+            . artifacts/coverage/coverage.env
+            coverage_percent="$COVERAGE_PERCENT"
+            branch_coverage_percent="$BRANCH_COVERAGE_PERCENT"
+            minimum_coverage="$MINIMUM_COVERAGE"
+          fi
+
+          if [ "${{ steps.coverage_gate.outcome }}" = "success" ]; then
+            coverage_status="passed"
+          elif [ "${{ steps.coverage_gate.outcome }}" = "failure" ]; then
+            coverage_status="failed"
+          fi
+
+          {
+            echo "## Pull request checks"
+            echo
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| Tests | ${test_status} |"
+            echo "| Coverage gate | ${coverage_status} |"
+            echo "| Line coverage | ${coverage_percent}% |"
+            echo "| Branch coverage | ${branch_coverage_percent}% |"
+            echo "| Required coverage | ${minimum_coverage}% |"
+          } > artifacts/coverage/pr-summary.md
+
+          cat artifacts/coverage/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment PR summary
+        if: always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pull-request-checks
+          path: artifacts/coverage/pr-summary.md
+
+      - name: Fail on unsuccessful checks
+        if: always()
+        run: |
+          if [ "${{ steps.test.outcome }}" != "success" ]; then
+            exit 1
+          fi
+
+          if [ "${{ steps.coverage_gate.outcome }}" != "success" ]; then
+            exit 1
+          fi
