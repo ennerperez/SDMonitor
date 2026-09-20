@@ -46,26 +46,20 @@ namespace SDMonitor.Tests
         }
 
         [Fact]
-        public void LoadUsesDefaultTilesWhenNoConfigFileExists()
+        public void LoadCreatesDefaultTilesFileWhenNoConfigFileExists()
         {
-            string originalDirectory = Environment.CurrentDirectory;
             using TempDirectory temp = new();
+            string defaultConfigDirectory = Path.Combine(temp.Path, "SDMonitor");
 
-            try
-            {
-                Environment.CurrentDirectory = temp.Path;
+            DashboardConfig config = DashboardConfig.Load(null, null, defaultConfigDirectory);
 
-                DashboardConfig config = DashboardConfig.Load(null, null);
-
-                Assert.Equal(MonitorMiniConstants.KeyCount, config.Tiles.Count);
-                Assert.Equal(1500, config.RefreshIntervalMilliseconds);
-                Assert.Equal("cpu", config.Tiles[0].Metric);
-                Assert.Equal("download", config.Tiles[5].Metric);
-            }
-            finally
-            {
-                Environment.CurrentDirectory = originalDirectory;
-            }
+            string path = Path.Combine(defaultConfigDirectory, DashboardConfig.DefaultFileName);
+            Assert.True(Directory.Exists(defaultConfigDirectory));
+            Assert.True(File.Exists(path));
+            Assert.Equal(MonitorMiniConstants.KeyCount, config.Tiles.Count);
+            Assert.Equal(1500, config.RefreshIntervalMilliseconds);
+            Assert.Equal("cpu", config.Tiles[0].Metric);
+            Assert.Equal("download", config.Tiles[5].Metric);
         }
 
         [Fact]

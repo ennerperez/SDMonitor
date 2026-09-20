@@ -14,7 +14,8 @@ namespace SDMonitor
         {
             PropertyNameCaseInsensitive = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
-            AllowTrailingCommas = true
+            AllowTrailingCommas = true,
+            WriteIndented = true
         };
 
         public DashboardConfig(IReadOnlyList<DashboardTile> tiles)
@@ -31,7 +32,12 @@ namespace SDMonitor
 
         public static DashboardConfig Load(string? path, int? refreshOverrideMilliseconds)
         {
-            DashboardTilesFile file = LoadFile(path);
+            return Load(path, refreshOverrideMilliseconds, GetDefaultConfigDirectory());
+        }
+
+        internal static DashboardConfig Load(string? path, int? refreshOverrideMilliseconds, string defaultConfigDirectory)
+        {
+            DashboardTilesFile file = LoadFile(path, defaultConfigDirectory);
             List<DashboardTile> tiles = new();
             HashSet<int> positions = new();
 
@@ -49,12 +55,28 @@ namespace SDMonitor
             return new DashboardConfig(tiles.OrderBy(tile => tile.Position).ToArray());
         }
 
-        private static DashboardTilesFile LoadFile(string? path)
+        internal static string GetDefaultConfigDirectory()
         {
-            string? resolvedPath = ResolvePath(path);
-            if (resolvedPath is null)
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            if (string.IsNullOrWhiteSpace(appData))
             {
-                return DashboardTilesFile.Default();
+                appData = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            }
+
+            if (string.IsNullOrWhiteSpace(appData))
+            {
+                appData = Environment.CurrentDirectory;
+            }
+
+            return Path.Combine(appData, "SDMonitor");
+        }
+
+        private static DashboardTilesFile LoadFile(string? path, string? defaultConfigDirectory = null)
+        {
+            string resolvedPath = ResolvePath(path, defaultConfigDirectory);
+            if (!File.Exists(resolvedPath))
+            {
+                CreateDefaultFile(resolvedPath);
             }
 
             string json = File.ReadAllText(resolvedPath);
@@ -67,7 +89,7 @@ namespace SDMonitor
             return file;
         }
 
-        private static string? ResolvePath(string? path)
+        private static string ResolvePath(string? path, string? defaultConfigDirectory)
         {
             if (!string.IsNullOrWhiteSpace(path))
             {
@@ -79,14 +101,19 @@ namespace SDMonitor
                 return path;
             }
 
-            string currentDirectoryPath = Path.Combine(Environment.CurrentDirectory, DefaultFileName);
-            if (File.Exists(currentDirectoryPath))
+            return Path.Combine(defaultConfigDirectory ?? GetDefaultConfigDirectory(), DefaultFileName);
+        }
+
+        private static void CreateDefaultFile(string path)
+        {
+            string? directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(directory))
             {
-                return currentDirectoryPath;
+                Directory.CreateDirectory(directory);
             }
 
-            string executableDirectoryPath = Path.Combine(AppContext.BaseDirectory, DefaultFileName);
-            return File.Exists(executableDirectoryPath) ? executableDirectoryPath : null;
+            string json = JsonSerializer.Serialize(DashboardTilesFile.Default(), s_jsonOptions);
+            File.WriteAllText(path, json);
         }
     }
 
