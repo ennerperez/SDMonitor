@@ -29,6 +29,7 @@
 - Dashboard tiles are configured through external JSON with `metric`, `font`, title/value sizes, title, border color, progress color, background color, progress bar height percent, margin/padding percent, refresh interval, text colors, and deck position.
 - Dashboard maps configured metrics to CPU, RAM, GPU, root disk, network upload, and network download.
 - Linux metrics come from `/proc/stat`, `/proc/meminfo`, `/proc/net/dev`, and `DriveInfo`.
+- Windows metrics come from process CPU time, `GlobalMemoryStatusEx`, `DriveInfo`, and `NetworkInterface`.
 - GPU usage uses `nvidia-smi` when present; otherwise tile shows `N/A`.
 - Tile renderer is pure C# pixel drawing; no `System.Drawing` dependency.
 - Network upload/download bars auto-scale to the peak rate observed during the current dashboard run.

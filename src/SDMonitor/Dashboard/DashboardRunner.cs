@@ -9,7 +9,7 @@ namespace SDMonitor
     {
         public static void Run(MonitorMini deck, DashboardConfig config, int? frames)
         {
-            LinuxHardwareSampler sampler = new();
+            IHardwareSampler sampler = HardwareSampler.Create();
             Console.WriteLine("Dashboard running.");
 
             using CancellationTokenSource cancellation = new();
@@ -91,7 +91,7 @@ namespace SDMonitor
 
         public static void RunConsoleOnly(DashboardConfig config, int? frames)
         {
-            LinuxHardwareSampler sampler = new();
+            IHardwareSampler sampler = HardwareSampler.Create();
             Console.WriteLine("Dashboard running without device.");
 
             using CancellationTokenSource cancellation = new();

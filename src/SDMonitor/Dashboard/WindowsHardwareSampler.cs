@@ -1,12 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 
 namespace SDMonitor
 {
-    internal sealed class LinuxHardwareSampler : IHardwareSampler
+    internal sealed class WindowsHardwareSampler : IHardwareSampler
     {
         private CpuSample? _previousCpu;
         private NetworkSample? _previousNetwork;
@@ -18,7 +19,7 @@ namespace SDMonitor
             double? cpuPercent = ReadCpuPercent();
             double? ramPercent = ReadRamPercent();
             double? gpuPercent = ReadNvidiaGpuPercent();
-            double? diskPercent = ReadRootDiskPercent();
+            double? diskPercent = ReadSystemDiskPercent();
             (double uploadBytesPerSecond, double downloadBytesPerSecond) = ReadNetworkBytesPerSecond();
 
             return
@@ -34,32 +35,7 @@ namespace SDMonitor
 
         private double? ReadCpuPercent()
         {
-            if (!File.Exists("/proc/stat"))
-            {
-                return null;
-            }
-
-            string? line = File.ReadLines("/proc/stat").FirstOrDefault();
-            if (line is null || !line.StartsWith("cpu ", StringComparison.Ordinal))
-            {
-                return null;
-            }
-
-            string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 5)
-            {
-                return null;
-            }
-
-            ulong[] values = parts.Skip(1).Select(value => ulong.TryParse(value, out ulong parsed) ? parsed : 0).ToArray();
-            ulong idle = values.ElementAtOrDefault(3) + values.ElementAtOrDefault(4);
-            ulong total = 0;
-            foreach (ulong value in values)
-            {
-                total += value;
-            }
-
-            CpuSample current = new(total, idle);
+            CpuSample current = new(DateTimeOffset.UtcNow, ReadProcessCpuTicks());
             CpuSample? previous = _previousCpu;
             _previousCpu = current;
 
@@ -68,47 +44,59 @@ namespace SDMonitor
                 return 0;
             }
 
-            ulong totalDelta = current.Total - previous.Total;
-            ulong idleDelta = current.Idle - previous.Idle;
-            if (totalDelta == 0)
+            double elapsedTicks = (current.Timestamp - previous.Timestamp).TotalSeconds *
+                Environment.ProcessorCount *
+                TimeSpan.TicksPerSecond;
+            if (elapsedTicks <= 0)
             {
                 return 0;
             }
 
-            return Math.Clamp((1 - idleDelta / (double)totalDelta) * 100, 0, 100);
+            long cpuTicks = current.ProcessCpuTicks - previous.ProcessCpuTicks;
+            return Math.Clamp(cpuTicks / elapsedTicks * 100, 0, 100);
+        }
+
+        private static long ReadProcessCpuTicks()
+        {
+            long ticks = 0;
+            foreach (Process process in Process.GetProcesses())
+            {
+                try
+                {
+                    ticks += process.TotalProcessorTime.Ticks;
+                }
+                catch
+                {
+                }
+                finally
+                {
+                    process.Dispose();
+                }
+            }
+
+            return ticks;
         }
 
         private static double? ReadRamPercent()
         {
-            if (!File.Exists("/proc/meminfo"))
+            try
+            {
+                MemoryStatusEx status = new()
+                {
+                    Length = (uint)Marshal.SizeOf<MemoryStatusEx>()
+                };
+
+                if (!GlobalMemoryStatusEx(ref status) || status.TotalPhys == 0)
+                {
+                    return null;
+                }
+
+                return Math.Clamp((status.TotalPhys - status.AvailPhys) / (double)status.TotalPhys * 100, 0, 100);
+            }
+            catch
             {
                 return null;
             }
-
-            Dictionary<string, ulong> values = File.ReadLines("/proc/meminfo")
-                .Select(ParseMemInfoLine)
-                .Where(pair => pair.HasValue)
-                .ToDictionary(pair => pair!.Value.Key, pair => pair!.Value.Value);
-
-            if (!values.TryGetValue("MemTotal", out ulong total) ||
-                !values.TryGetValue("MemAvailable", out ulong available) ||
-                total == 0)
-            {
-                return null;
-            }
-
-            return Math.Clamp((total - available) / (double)total * 100, 0, 100);
-        }
-
-        private static KeyValuePair<string, ulong>? ParseMemInfoLine(string line)
-        {
-            string[] parts = line.Split([':', ' '], StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 2 || !ulong.TryParse(parts[1], out ulong value))
-            {
-                return null;
-            }
-
-            return new KeyValuePair<string, ulong>(parts[0], value);
         }
 
         private static double? ReadNvidiaGpuPercent()
@@ -143,15 +131,33 @@ namespace SDMonitor
             }
         }
 
-        private static double? ReadRootDiskPercent()
+        private static double? ReadSystemDiskPercent()
         {
-            DriveInfo root = new("/");
-            if (!root.IsReady || root.TotalSize <= 0)
+            try
+            {
+                string? rootPath = Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.System));
+                if (string.IsNullOrWhiteSpace(rootPath))
+                {
+                    rootPath = Path.GetPathRoot(Environment.SystemDirectory);
+                }
+
+                if (string.IsNullOrWhiteSpace(rootPath))
+                {
+                    return null;
+                }
+
+                DriveInfo root = new(rootPath);
+                if (!root.IsReady || root.TotalSize <= 0)
+                {
+                    return null;
+                }
+
+                return Math.Clamp((root.TotalSize - root.AvailableFreeSpace) / (double)root.TotalSize * 100, 0, 100);
+            }
+            catch
             {
                 return null;
             }
-
-            return Math.Clamp((root.TotalSize - root.AvailableFreeSpace) / (double)root.TotalSize * 100, 0, 100);
         }
 
         private (double UploadBytesPerSecond, double DownloadBytesPerSecond) ReadNetworkBytesPerSecond()
@@ -176,43 +182,31 @@ namespace SDMonitor
             ulong receive = 0;
             ulong transmit = 0;
 
-            if (!File.Exists("/proc/net/dev"))
+            foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
             {
-                return new NetworkSample(DateTimeOffset.UtcNow, receive, transmit);
-            }
-
-            foreach (string line in File.ReadLines("/proc/net/dev").Skip(2))
-            {
-                string[] nameAndValues = line.Split(':', 2);
-                if (nameAndValues.Length != 2)
+                if (networkInterface.OperationalStatus != OperationalStatus.Up ||
+                    networkInterface.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel)
                 {
                     continue;
                 }
 
-                string interfaceName = nameAndValues[0].Trim();
-                if (interfaceName == "lo")
+                try
                 {
-                    continue;
+                    IPv4InterfaceStatistics statistics = networkInterface.GetIPv4Statistics();
+                    receive += ToUnsigned(statistics.BytesReceived);
+                    transmit += ToUnsigned(statistics.BytesSent);
                 }
-
-                string[] values = nameAndValues[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (values.Length < 16)
+                catch
                 {
-                    continue;
-                }
-
-                if (ulong.TryParse(values[0], out ulong rx))
-                {
-                    receive += rx;
-                }
-
-                if (ulong.TryParse(values[8], out ulong tx))
-                {
-                    transmit += tx;
                 }
             }
 
             return new NetworkSample(DateTimeOffset.UtcNow, receive, transmit);
+        }
+
+        private static ulong ToUnsigned(long value)
+        {
+            return value > 0 ? (ulong)value : 0;
         }
 
         private static DashboardMetric PercentMetric(string metric, string title, double? percent, RgbColor accent)
@@ -271,7 +265,25 @@ namespace SDMonitor
             return $"{bytesPerSecond:0}B";
         }
 
-        private sealed record CpuSample(ulong Total, ulong Idle);
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GlobalMemoryStatusEx(ref MemoryStatusEx buffer);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MemoryStatusEx
+        {
+            public uint Length;
+            public uint MemoryLoad;
+            public ulong TotalPhys;
+            public ulong AvailPhys;
+            public ulong TotalPageFile;
+            public ulong AvailPageFile;
+            public ulong TotalVirtual;
+            public ulong AvailVirtual;
+            public ulong AvailExtendedVirtual;
+        }
+
+        private sealed record CpuSample(DateTimeOffset Timestamp, long ProcessCpuTicks);
 
         private sealed record NetworkSample(DateTimeOffset Timestamp, ulong ReceiveBytes, ulong TransmitBytes);
     }
