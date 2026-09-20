@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="SDMonitor.Tests" />
+    <InternalsVisibleTo Include="sdmonitor-simulator" />
   </ItemGroup>
 
   <ItemGroup>
