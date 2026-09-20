@@ -28,7 +28,19 @@ namespace SDMonitor.Tests
                   "metric": "cpu",
                   "title": "CPU",
                   "position": 1,
-                  "refreshMilliseconds": 1500
+                  "refreshMilliseconds": 1500,
+                  "thresholdsEnabled": true,
+                  "thresholds": [
+                    {
+                      "minPercent": 80,
+                      "titleSize": 2,
+                      "valueSize": 3,
+                      "borderColor": "#FF0000",
+                      "backgroundColor": "#110000",
+                      "fontColor": "#FFFFFF",
+                      "valueColor": "#FFFF00"
+                    }
+                  ]
                 }
               ],
             }
@@ -40,9 +52,73 @@ namespace SDMonitor.Tests
             Assert.Equal(500, config.RefreshIntervalMilliseconds);
             Assert.Equal("cpu", config.Tiles[0].Metric);
             Assert.Equal("CPU", config.Tiles[0].Title);
+            Assert.Equal(1, config.Tiles[0].Thresholds.Count);
             Assert.Equal("ram", config.Tiles[1].Metric);
             Assert.Equal("Memory", config.Tiles[1].Title);
             Assert.Equal(new RgbColor(0x78, 0xDC, 0x50), config.Tiles[1].Style.BorderColor);
+        }
+
+        [Fact]
+        public void TileStyleForAppliesFirstMatchingEnabledThreshold()
+        {
+            DashboardTile tile = new DashboardTileJson
+            {
+                Metric = "cpu",
+                Title = "CPU",
+                Position = 1,
+                BorderColor = "#00C8FF",
+                BackgroundColor = "#080A0E",
+                TitleColor = "#AAB4BE",
+                ValueColor = "#F5F8FA",
+                ThresholdsEnabled = true,
+                Thresholds =
+                [
+                    new()
+                    {
+                        MinPercent = 80,
+                        TitleSize = 2,
+                        ValueSize = 3,
+                        BorderColor = "#FF0000",
+                        BackgroundColor = "#110000",
+                        FontColor = "#FFFFFF",
+                        ValueColor = "#FFFF00"
+                    }
+                ]
+            }.ToDashboardTile(null);
+
+            TileRenderStyle baseStyle = tile.StyleFor(50);
+            TileRenderStyle thresholdStyle = tile.StyleFor(85);
+
+            Assert.Equal(1, baseStyle.TitleSize);
+            Assert.Equal(new RgbColor(0x00, 0xC8, 0xFF), baseStyle.BorderColor);
+            Assert.Equal(2, thresholdStyle.TitleSize);
+            Assert.Equal(3, thresholdStyle.ValueSize);
+            Assert.Equal(new RgbColor(0xFF, 0x00, 0x00), thresholdStyle.BorderColor);
+            Assert.Equal(new RgbColor(0x11, 0x00, 0x00), thresholdStyle.BackgroundColor);
+            Assert.Equal(new RgbColor(0xFF, 0xFF, 0xFF), thresholdStyle.TitleColor);
+            Assert.Equal(new RgbColor(0xFF, 0xFF, 0x00), thresholdStyle.ValueColor);
+        }
+
+        [Fact]
+        public void TileStyleForIgnoresThresholdsWhenDisabled()
+        {
+            DashboardTile tile = new DashboardTileJson
+            {
+                Metric = "cpu",
+                Position = 1,
+                ThresholdsEnabled = false,
+                Thresholds =
+                [
+                    new()
+                    {
+                        MinPercent = 1,
+                        BorderColor = "#FF0000"
+                    }
+                ]
+            }.ToDashboardTile(null);
+
+            Assert.Empty(tile.Thresholds);
+            Assert.Equal(new RgbColor(0x00, 0xC8, 0xFF), tile.StyleFor(100).BorderColor);
         }
 
         [Fact]
@@ -101,6 +177,10 @@ namespace SDMonitor.Tests
             Assert.Throws<InvalidOperationException>(() => new DashboardTileJson { Metric = "cpu", Position = 1, MarginPercent = 31 }.ToDashboardTile(null));
             Assert.Throws<InvalidOperationException>(() => new DashboardTileJson { Metric = "cpu", Position = 1, PaddingPercent = 31 }.ToDashboardTile(null));
             Assert.Throws<InvalidOperationException>(() => new DashboardTileJson { Metric = "cpu", Position = 1, BorderColor = "xyz" }.ToDashboardTile(null));
+            Assert.Throws<InvalidOperationException>(() => new DashboardThresholdJson { MinPercent = 101 }.ToDashboardThreshold());
+            Assert.Throws<InvalidOperationException>(() => new DashboardThresholdJson { MinPercent = 80, MaxPercent = 70 }.ToDashboardThreshold());
+            Assert.Throws<InvalidOperationException>(() => new DashboardThresholdJson().ToDashboardThreshold());
+            Assert.Throws<InvalidOperationException>(() => new DashboardThresholdJson { MinPercent = 80, TitleSize = 5 }.ToDashboardThreshold());
         }
 
         private static string WriteTempConfig(string json)

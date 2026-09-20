@@ -64,7 +64,8 @@ namespace SDMonitor.Tests
                 "CPU",
                 1,
                 250,
-                TileRenderStyle.Default(new RgbColor(0, 200, 255)));
+                TileRenderStyle.Default(new RgbColor(0, 200, 255)),
+                []);
 
             return new DashboardConfig([tile]);
         }

@@ -68,8 +68,10 @@ Dashboard tile appearance is configured in `dashboard-tiles.json` under the
 per-user config directory: `~/.config/SDMonitor` on Linux,
 `~/Library/Application Support/SDMonitor` on macOS, and
 `%APPDATA%\SDMonitor` on Windows. Each tile selects a `metric`, `position`,
-`title`, colors, text sizes, spacing, bottom progress bar height, and
-`refreshMilliseconds`.
+`title`, colors, text sizes, spacing, bottom progress bar height, `refreshMilliseconds`, and optional `thresholds`. Threshold
+styles are enabled per tile with `thresholdsEnabled`; matching thresholds can
+override text size, background color, font color, title/value colors, and border
+color.
 
 The Avalonia simulator can mirror the six-key dashboard without opening the
 Stream Deck HID device:

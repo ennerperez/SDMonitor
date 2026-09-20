@@ -15,6 +15,17 @@
       "refreshMilliseconds": 1500,
       "titleColor": "#AAB4BE",
       "valueColor": "#F5F8FA",
+      "thresholdsEnabled": false,
+      "thresholds": [
+        {
+          "minPercent": 80,
+          "titleSize": 1,
+          "valueSize": 2,
+          "borderColor": "#FF4D4D",
+          "backgroundColor": "#190707",
+          "fontColor": "#FFFFFF"
+        }
+      ],
       "position": 1
     },
     {

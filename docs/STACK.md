@@ -26,7 +26,7 @@
 - CLI command: `dashboard [config-path|interval-ms] [frames]`.
 - Running the CLI without arguments starts `dashboard` and loads `dashboard-tiles.json` from the per-user SDMonitor config directory, creating it with defaults when missing.
 - If the Stream Deck HID handle cannot be opened, dashboard mode falls back to console output.
-- Dashboard tiles are configured through external JSON with `metric`, `font`, title/value sizes, title, border color, progress color, background color, progress bar height percent, margin/padding percent, refresh interval, text colors, and deck position.
+- Dashboard tiles are configured through external JSON with `metric`, `font`, title/value sizes, title, border color, progress color, background color, progress bar height percent, margin/padding percent, refresh interval, text colors, deck position, and optional per-tile threshold style overrides.
 - Dashboard maps configured metrics to CPU, RAM, GPU, root disk, network upload, and network download.
 - Linux metrics come from `/proc/stat`, `/proc/meminfo`, `/proc/net/dev`, and `DriveInfo`.
 - Windows metrics come from process CPU time, `GlobalMemoryStatusEx`, `DriveInfo`, and `NetworkInterface`.
