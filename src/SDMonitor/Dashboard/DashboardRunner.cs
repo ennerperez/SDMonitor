@@ -55,7 +55,7 @@ namespace SDMonitor.Dashboard
                         }
 
                         var title = string.IsNullOrWhiteSpace(tile.Title) ? metric.Title : tile.Title;
-                        var image = KeyTileRenderer.RenderTile(title, metric.Value, metric.Percent, tile.Style);
+                        var image = KeyTileRenderer.RenderTile(title, metric.Value, metric.Percent, tile.StyleFor(metric.Percent));
                         if (lastImages[key] is not null && image.AsSpan().SequenceEqual(lastImages[key]))
                         {
                             lastRendered[key] = now;

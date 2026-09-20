@@ -250,8 +250,56 @@ namespace SDMonitor.Dashboard
             Title = title,
             Position = position,
             BorderColor = accent,
-            ProgressColor = accent
+            ProgressColor = accent,
+            ThresholdsEnabled = true,
+            Thresholds = DefaultThresholds(accent)
         };
+
+        private static List<DashboardThresholdJson> DefaultThresholds(string accent)
+        {
+            var color = ParseColor(accent);
+            return
+            [
+                DefaultThreshold(color, 0, 49.99, 0.10),
+                DefaultThreshold(color, 50, 74.99, 0.18),
+                DefaultThreshold(color, 75, 89.99, 0.28),
+                DefaultThreshold(color, 90, null, 0.42)
+            ];
+        }
+
+        private static DashboardThresholdJson DefaultThreshold(RgbColor color, double minPercent, double? maxPercent, double intensity)
+        {
+            return new DashboardThresholdJson
+            {
+                MinPercent = minPercent,
+                MaxPercent = maxPercent,
+                BorderColor = ToHex(Lighten(color, intensity / 2)),
+                ProgressColor = ToHex(Lighten(color, intensity / 2)),
+                BackgroundColor = ToHex(Darken(color, intensity)),
+                FontColor = "#FFFFFF"
+            };
+        }
+
+        private static RgbColor Darken(RgbColor color, double intensity)
+        {
+            return new RgbColor(
+                checked((byte)Math.Clamp(Math.Round(color.Red * intensity), 0, 255)),
+                checked((byte)Math.Clamp(Math.Round(color.Green * intensity), 0, 255)),
+                checked((byte)Math.Clamp(Math.Round(color.Blue * intensity), 0, 255)));
+        }
+
+        private static RgbColor Lighten(RgbColor color, double intensity)
+        {
+            return new RgbColor(
+                checked((byte)Math.Clamp(Math.Round(color.Red + ((255 - color.Red) * intensity)), 0, 255)),
+                checked((byte)Math.Clamp(Math.Round(color.Green + ((255 - color.Green) * intensity)), 0, 255)),
+                checked((byte)Math.Clamp(Math.Round(color.Blue + ((255 - color.Blue) * intensity)), 0, 255)));
+        }
+
+        private static string ToHex(RgbColor color)
+        {
+            return $"#{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
+        }
 
         public DashboardTile ToDashboardTile(int? refreshOverrideMilliseconds)
         {
