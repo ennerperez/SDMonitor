@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="SDMonitor.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="dashboard-tiles.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

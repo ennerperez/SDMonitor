@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using HidSharp;
 
 namespace SDMonitor
 {
+    [ExcludeFromCodeCoverage]
     public sealed class HidSharpMonitorTransport : IMonitorTransport
     {
         private readonly HidStream _stream;

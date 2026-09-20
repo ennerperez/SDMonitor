@@ -133,7 +133,7 @@ namespace SDMonitor
             Console.WriteLine("Console dashboard stopped.");
         }
 
-        private static void PrintConsole(DashboardConfig config, IReadOnlyDictionary<string, DashboardMetric> metricsByName)
+        private static void PrintConsole(DashboardConfig config, Dictionary<string, DashboardMetric> metricsByName)
         {
             Console.Write("\r");
             Console.Write(string.Join("  ", config.Tiles.Select(tile =>

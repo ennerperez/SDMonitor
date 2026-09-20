@@ -219,8 +219,8 @@ namespace SDMonitor
 
             if (color.Length != 6 ||
                 !byte.TryParse(color[..2], System.Globalization.NumberStyles.HexNumber, null, out byte red) ||
-                !byte.TryParse(color.Substring(2, 2), System.Globalization.NumberStyles.HexNumber, null, out byte green) ||
-                !byte.TryParse(color.Substring(4, 2), System.Globalization.NumberStyles.HexNumber, null, out byte blue))
+                !byte.TryParse(color.AsSpan(2, 2), System.Globalization.NumberStyles.HexNumber, null, out byte green) ||
+                !byte.TryParse(color.AsSpan(4, 2), System.Globalization.NumberStyles.HexNumber, null, out byte blue))
             {
                 throw new InvalidOperationException($"Invalid RGB color: {value}.");
             }
