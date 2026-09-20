@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 using Avalonia.Threading;
 using SDMonitor.Simulator.Services;
 
@@ -21,6 +22,7 @@ namespace SDMonitor.Simulator.ViewModels
         {
             _dashboard = dashboard;
             Keys = new ObservableCollection<StreamDeckKeyViewModel>(_dashboard.CreateKeys());
+            RefreshSettingsCommand = new DelegateCommand(RefreshSettings);
 
             _timer = new DispatcherTimer
             {
@@ -47,11 +49,29 @@ namespace SDMonitor.Simulator.ViewModels
 
         public ObservableCollection<StreamDeckKeyViewModel> Keys { get; }
 
+        public ICommand RefreshSettingsCommand { get; }
+
         private void Refresh()
         {
             var update = _dashboard.Update(Keys);
             StatusText = update.StatusText;
             RefreshText = update.RefreshText;
+        }
+
+        private void RefreshSettings()
+        {
+            try
+            {
+                var update = _dashboard.ReloadPreferences(Keys);
+                _timer.Interval = TimeSpan.FromMilliseconds(_dashboard.RefreshIntervalMilliseconds);
+                StatusText = update.StatusText;
+                RefreshText = update.RefreshText;
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"Preferences reload failed: {ex.Message}";
+                RefreshText = $"{DateTimeOffset.Now:HH:mm:ss}";
+            }
         }
     }
 }

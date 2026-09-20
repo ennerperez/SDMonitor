@@ -149,7 +149,7 @@ namespace SDMonitor
 
         private static void RunDashboard(string[] args)
         {
-            (string configPath, int? refreshOverrideMilliseconds, int? frames) = ParseDashboardArguments(args);
+            (string? configPath, int? refreshOverrideMilliseconds, int? frames) = ParseDashboardArguments(args);
             var config = DashboardConfig.Load(configPath, refreshOverrideMilliseconds);
 
             try

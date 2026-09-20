@@ -11,18 +11,17 @@ namespace SDMonitor.Simulator.Services
 {
     public sealed class DashboardSimulationService
     {
-        private readonly DashboardConfig _config;
         private readonly IHardwareSampler _sampler;
         private readonly DateTimeOffset[] _lastUpdated = new DateTimeOffset[MonitorMiniConstants.KeyCount];
+        private DashboardConfig _config;
 
         public DashboardSimulationService()
         {
-            _config = DashboardConfig.Load(string.Empty, null);
             _sampler = HardwareSampler.Create();
-            RefreshIntervalMilliseconds = _config.RefreshIntervalMilliseconds;
+            _config = LoadConfig();
         }
 
-        public int RefreshIntervalMilliseconds { get; }
+        public int RefreshIntervalMilliseconds => _config.RefreshIntervalMilliseconds;
 
         public IReadOnlyList<StreamDeckKeyViewModel> CreateKeys()
         {
@@ -37,17 +36,60 @@ namespace SDMonitor.Simulator.Services
                 })
                 .ToArray();
 
+            ApplyConfiguredTiles(keys);
+            return keys;
+        }
+
+        public DashboardUpdate ReloadPreferences(IReadOnlyList<StreamDeckKeyViewModel> keys)
+        {
+            DashboardConfig config = LoadConfig();
+            _config = config;
+            Array.Clear(_lastUpdated);
+            ResetKeys(keys);
+            ApplyConfiguredTiles(keys);
+            return Update(keys, force: true, statusPrefix: "Preferences reloaded");
+        }
+
+        public DashboardUpdate Update(IReadOnlyList<StreamDeckKeyViewModel> keys)
+        {
+            return Update(keys, force: false, statusPrefix: "Mirroring");
+        }
+
+        private static DashboardConfig LoadConfig()
+        {
+            return DashboardConfig.Load(string.Empty, null);
+        }
+
+        private void ApplyConfiguredTiles(IReadOnlyList<StreamDeckKeyViewModel> keys)
+        {
             foreach (DashboardTile tile in _config.Tiles)
             {
                 var key = keys[tile.Position - 1];
                 ApplyStyle(key, tile.Style);
                 key.Title = string.IsNullOrWhiteSpace(tile.Title) ? tile.Metric.ToUpperInvariant() : tile.Title;
             }
-
-            return keys;
         }
 
-        public DashboardUpdate Update(IReadOnlyList<StreamDeckKeyViewModel> keys)
+        private static void ResetKeys(IReadOnlyList<StreamDeckKeyViewModel> keys)
+        {
+            for (var index = 0; index < keys.Count; index++)
+            {
+                var key = keys[index];
+                key.Title = $"KEY {index + 1}";
+                key.Value = "N/A";
+                key.Percent = 0;
+                key.TitleFontSize = 13;
+                key.ValueFontSize = 24;
+                key.ProgressHeight = 7;
+                key.BackgroundBrush = StreamDeckKeyViewModel.Brush("#080A0E");
+                key.BorderBrush = StreamDeckKeyViewModel.Brush("#222832");
+                key.ProgressBrush = StreamDeckKeyViewModel.Brush("#303846");
+                key.TitleBrush = StreamDeckKeyViewModel.Brush("#AAB4BE");
+                key.ValueBrush = StreamDeckKeyViewModel.Brush("#F5F8FA");
+            }
+        }
+
+        private DashboardUpdate Update(IReadOnlyList<StreamDeckKeyViewModel> keys, bool force, string statusPrefix)
         {
             var now = DateTimeOffset.UtcNow;
             DashboardMetric[] metrics = _sampler.Sample();
@@ -58,7 +100,7 @@ namespace SDMonitor.Simulator.Services
             foreach (DashboardTile tile in _config.Tiles)
             {
                 var keyIndex = tile.Position - 1;
-                if (now - _lastUpdated[keyIndex] < TimeSpan.FromMilliseconds(tile.RefreshMilliseconds))
+                if (!force && now - _lastUpdated[keyIndex] < TimeSpan.FromMilliseconds(tile.RefreshMilliseconds))
                 {
                     continue;
                 }
@@ -69,7 +111,7 @@ namespace SDMonitor.Simulator.Services
                 }
 
                 var key = keys[keyIndex];
-                ApplyStyle(key, tile.Style);
+                ApplyStyle(key, tile.StyleFor(metric.Percent));
                 key.Title = string.IsNullOrWhiteSpace(tile.Title) ? metric.Title : tile.Title;
                 key.Value = metric.Value;
                 key.Percent = Math.Clamp(metric.Percent ?? 0, 0, 100);
@@ -77,7 +119,7 @@ namespace SDMonitor.Simulator.Services
             }
 
             return new DashboardUpdate(
-                $"Mirroring {metrics.Length} live metrics",
+                $"{statusPrefix} {metrics.Length} live metrics",
                 $"{DateTimeOffset.Now:HH:mm:ss}");
         }
 

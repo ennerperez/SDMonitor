@@ -28,20 +28,34 @@
             FontSize="12" />
       </StackPanel>
 
-      <Border
+      <StackPanel
           Grid.Column="1"
-          Background="#171A20"
-          BorderBrush="#2E3440"
-          BorderThickness="1"
-          CornerRadius="8"
-          Padding="12,7"
+          Orientation="Horizontal"
+          Spacing="8"
           VerticalAlignment="Center">
-        <TextBlock
-            Text="{Binding RefreshText}"
-            Foreground="#B9C3D0"
+        <Button
+            Content="Refresh"
+            Command="{Binding RefreshSettingsCommand}"
+            Padding="12,7"
+            Background="#202631"
+            BorderBrush="#3B4658"
+            BorderThickness="1"
+            Foreground="#F4F7FA"
             FontSize="12"
-            FontWeight="Medium" />
-      </Border>
+            FontWeight="SemiBold" />
+        <Border
+            Background="#171A20"
+            BorderBrush="#2E3440"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12,7">
+          <TextBlock
+              Text="{Binding RefreshText}"
+              Foreground="#B9C3D0"
+              FontSize="12"
+              FontWeight="Medium" />
+        </Border>
+      </StackPanel>
     </Grid>
 
     <Border

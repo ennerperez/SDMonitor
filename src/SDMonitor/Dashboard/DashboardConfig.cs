@@ -32,12 +32,12 @@ namespace SDMonitor.Dashboard
 
         public int RefreshIntervalMilliseconds { get; }
 
-        public static DashboardConfig Load(string path, int? refreshOverrideMilliseconds)
+        public static DashboardConfig Load(string? path, int? refreshOverrideMilliseconds)
         {
             return Load(path, refreshOverrideMilliseconds, GetDefaultConfigDirectory());
         }
 
-        public static DashboardConfig Load(string path, int? refreshOverrideMilliseconds, string defaultConfigDirectory)
+        public static DashboardConfig Load(string? path, int? refreshOverrideMilliseconds, string defaultConfigDirectory)
         {
             var file = LoadFile(path, defaultConfigDirectory);
             List<DashboardTile> tiles = new();
@@ -73,7 +73,7 @@ namespace SDMonitor.Dashboard
             return Path.Combine(appData, "SDMonitor");
         }
 
-        private static DashboardTilesFile LoadFile(string path, string defaultConfigDirectory)
+        private static DashboardTilesFile LoadFile(string? path, string defaultConfigDirectory)
         {
             var resolvedPath = ResolvePath(path, defaultConfigDirectory);
             if (!File.Exists(resolvedPath))
@@ -91,7 +91,7 @@ namespace SDMonitor.Dashboard
             return file;
         }
 
-        private static string ResolvePath(string path, string defaultConfigDirectory)
+        private static string ResolvePath(string? path, string defaultConfigDirectory)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -324,7 +324,7 @@ namespace SDMonitor.Dashboard
             return new RgbColor(red, green, blue);
         }
 
-        public static RgbColor? ParseOptionalColor(string value)
+        public static RgbColor? ParseOptionalColor(string? value)
         {
             return string.IsNullOrWhiteSpace(value) ? null : ParseColor(value);
         }
@@ -340,11 +340,11 @@ namespace SDMonitor.Dashboard
 
         public int? ValueSize { get; init; }
 
-        public string BorderColor { get; init; }
+        public string? BorderColor { get; init; }
 
-        public string ProgressColor { get; init; }
+        public string? ProgressColor { get; init; }
 
-        public string BackgroundColor { get; init; }
+        public string? BackgroundColor { get; init; }
 
         public int? ProgressBarHeightPercent { get; init; }
 
@@ -352,11 +352,11 @@ namespace SDMonitor.Dashboard
 
         public int? PaddingPercent { get; init; }
 
-        public string FontColor { get; init; }
+        public string? FontColor { get; init; }
 
-        public string TitleColor { get; init; }
+        public string? TitleColor { get; init; }
 
-        public string ValueColor { get; init; }
+        public string? ValueColor { get; init; }
 
         public DashboardThreshold ToDashboardThreshold()
         {

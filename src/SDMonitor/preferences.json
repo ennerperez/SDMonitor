@@ -15,14 +15,37 @@
       "refreshMilliseconds": 1500,
       "titleColor": "#AAB4BE",
       "valueColor": "#F5F8FA",
-      "thresholdsEnabled": false,
+      "thresholdsEnabled": true,
       "thresholds": [
         {
-          "minPercent": 80,
-          "titleSize": 1,
-          "valueSize": 2,
-          "borderColor": "#FF4D4D",
-          "backgroundColor": "#190707",
+          "minPercent": 0,
+          "maxPercent": 49.99,
+          "borderColor": "#00C8FF",
+          "progressColor": "#00C8FF",
+          "backgroundColor": "#04151B",
+          "fontColor": "#EAFBFF"
+        },
+        {
+          "minPercent": 50,
+          "maxPercent": 74.99,
+          "borderColor": "#00D4FF",
+          "progressColor": "#00D4FF",
+          "backgroundColor": "#062430",
+          "fontColor": "#F0FCFF"
+        },
+        {
+          "minPercent": 75,
+          "maxPercent": 89.99,
+          "borderColor": "#26DEFF",
+          "progressColor": "#26DEFF",
+          "backgroundColor": "#083544",
+          "fontColor": "#FFFFFF"
+        },
+        {
+          "minPercent": 90,
+          "borderColor": "#66EAFF",
+          "progressColor": "#66EAFF",
+          "backgroundColor": "#0B4C5F",
           "fontColor": "#FFFFFF"
         }
       ],
@@ -43,6 +66,40 @@
       "refreshMilliseconds": 1500,
       "titleColor": "#AAB4BE",
       "valueColor": "#F5F8FA",
+      "thresholdsEnabled": true,
+      "thresholds": [
+        {
+          "minPercent": 0,
+          "maxPercent": 49.99,
+          "borderColor": "#78DC50",
+          "progressColor": "#78DC50",
+          "backgroundColor": "#0D1A0A",
+          "fontColor": "#F2FFED"
+        },
+        {
+          "minPercent": 50,
+          "maxPercent": 74.99,
+          "borderColor": "#84E55E",
+          "progressColor": "#84E55E",
+          "backgroundColor": "#15280F",
+          "fontColor": "#F7FFF3"
+        },
+        {
+          "minPercent": 75,
+          "maxPercent": 89.99,
+          "borderColor": "#9AEC77",
+          "progressColor": "#9AEC77",
+          "backgroundColor": "#203B18",
+          "fontColor": "#FFFFFF"
+        },
+        {
+          "minPercent": 90,
+          "borderColor": "#B8F49D",
+          "progressColor": "#B8F49D",
+          "backgroundColor": "#2F5723",
+          "fontColor": "#FFFFFF"
+        }
+      ],
       "position": 2
     },
     {
@@ -60,6 +117,40 @@
       "refreshMilliseconds": 1500,
       "titleColor": "#AAB4BE",
       "valueColor": "#F5F8FA",
+      "thresholdsEnabled": true,
+      "thresholds": [
+        {
+          "minPercent": 0,
+          "maxPercent": 49.99,
+          "borderColor": "#AA82FF",
+          "progressColor": "#AA82FF",
+          "backgroundColor": "#120D1F",
+          "fontColor": "#F8F3FF"
+        },
+        {
+          "minPercent": 50,
+          "maxPercent": 74.99,
+          "borderColor": "#B794FF",
+          "progressColor": "#B794FF",
+          "backgroundColor": "#1D1534",
+          "fontColor": "#FBF8FF"
+        },
+        {
+          "minPercent": 75,
+          "maxPercent": 89.99,
+          "borderColor": "#C7AAFF",
+          "progressColor": "#C7AAFF",
+          "backgroundColor": "#2A1D4A",
+          "fontColor": "#FFFFFF"
+        },
+        {
+          "minPercent": 90,
+          "borderColor": "#DCC8FF",
+          "progressColor": "#DCC8FF",
+          "backgroundColor": "#3E2B6E",
+          "fontColor": "#FFFFFF"
+        }
+      ],
       "position": 3
     },
     {
@@ -77,6 +168,40 @@
       "refreshMilliseconds": 1500,
       "titleColor": "#AAB4BE",
       "valueColor": "#F5F8FA",
+      "thresholdsEnabled": true,
+      "thresholds": [
+        {
+          "minPercent": 0,
+          "maxPercent": 49.99,
+          "borderColor": "#FFBE46",
+          "progressColor": "#FFBE46",
+          "backgroundColor": "#1D1406",
+          "fontColor": "#FFF8EC"
+        },
+        {
+          "minPercent": 50,
+          "maxPercent": 74.99,
+          "borderColor": "#FFC65E",
+          "progressColor": "#FFC65E",
+          "backgroundColor": "#30220B",
+          "fontColor": "#FFFAF2"
+        },
+        {
+          "minPercent": 75,
+          "maxPercent": 89.99,
+          "borderColor": "#FFD47F",
+          "progressColor": "#FFD47F",
+          "backgroundColor": "#46320F",
+          "fontColor": "#FFFFFF"
+        },
+        {
+          "minPercent": 90,
+          "borderColor": "#FFE3A6",
+          "progressColor": "#FFE3A6",
+          "backgroundColor": "#684A16",
+          "fontColor": "#FFFFFF"
+        }
+      ],
       "position": 4
     },
     {
@@ -94,6 +219,40 @@
       "refreshMilliseconds": 1500,
       "titleColor": "#AAB4BE",
       "valueColor": "#F5F8FA",
+      "thresholdsEnabled": true,
+      "thresholds": [
+        {
+          "minPercent": 0,
+          "maxPercent": 49.99,
+          "borderColor": "#FF6464",
+          "progressColor": "#FF6464",
+          "backgroundColor": "#200909",
+          "fontColor": "#FFF0F0"
+        },
+        {
+          "minPercent": 50,
+          "maxPercent": 74.99,
+          "borderColor": "#FF7777",
+          "progressColor": "#FF7777",
+          "backgroundColor": "#351010",
+          "fontColor": "#FFF6F6"
+        },
+        {
+          "minPercent": 75,
+          "maxPercent": 89.99,
+          "borderColor": "#FF9090",
+          "progressColor": "#FF9090",
+          "backgroundColor": "#501818",
+          "fontColor": "#FFFFFF"
+        },
+        {
+          "minPercent": 90,
+          "borderColor": "#FFB0B0",
+          "progressColor": "#FFB0B0",
+          "backgroundColor": "#702222",
+          "fontColor": "#FFFFFF"
+        }
+      ],
       "position": 5
     },
     {
@@ -111,6 +270,40 @@
       "refreshMilliseconds": 1500,
       "titleColor": "#AAB4BE",
       "valueColor": "#F5F8FA",
+      "thresholdsEnabled": true,
+      "thresholds": [
+        {
+          "minPercent": 0,
+          "maxPercent": 49.99,
+          "borderColor": "#50AAFF",
+          "progressColor": "#50AAFF",
+          "backgroundColor": "#091522",
+          "fontColor": "#F0F8FF"
+        },
+        {
+          "minPercent": 50,
+          "maxPercent": 74.99,
+          "borderColor": "#66B7FF",
+          "progressColor": "#66B7FF",
+          "backgroundColor": "#10243A",
+          "fontColor": "#F6FBFF"
+        },
+        {
+          "minPercent": 75,
+          "maxPercent": 89.99,
+          "borderColor": "#86C7FF",
+          "progressColor": "#86C7FF",
+          "backgroundColor": "#183655",
+          "fontColor": "#FFFFFF"
+        },
+        {
+          "minPercent": 90,
+          "borderColor": "#ADD9FF",
+          "progressColor": "#ADD9FF",
+          "backgroundColor": "#234E7A",
+          "fontColor": "#FFFFFF"
+        }
+      ],
       "position": 6
     }
   ]
