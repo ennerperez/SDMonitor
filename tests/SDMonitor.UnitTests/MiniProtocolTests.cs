@@ -1,15 +1,17 @@
 using System;
-using System.Collections.Generic;
+using SDMonitor.Devices;
+using SDMonitor.Protocol;
+using SDMonitor.Rendering;
 using Xunit;
 
-namespace SDMonitor.Tests
+namespace SDMonitor.UnitTests
 {
     public sealed class MiniProtocolTests
     {
         [Fact]
         public void BrightnessReportMatchesMiniFeatureReportShape()
         {
-            byte[] report = MiniProtocol.BrightnessReport(30);
+            var report = MiniProtocol.BrightnessReport(30);
 
             Assert.Equal(MonitorMiniConstants.FeatureReportLength, report.Length);
             Assert.Equal(0x05, report[0x00]);
@@ -29,7 +31,7 @@ namespace SDMonitor.Tests
         [Fact]
         public void SleepDurationReportWritesSecondsLittleEndian()
         {
-            byte[] report = MiniProtocol.SleepDurationReport(TimeSpan.FromSeconds(300));
+            var report = MiniProtocol.SleepDurationReport(TimeSpan.FromSeconds(300));
 
             Assert.Equal(0x0B, report[0x00]);
             Assert.Equal(0xA2, report[0x01]);
@@ -61,7 +63,7 @@ namespace SDMonitor.Tests
         {
             byte[] report = [0, 0, 0, 0, 0, (byte)' ', (byte)'S', (byte)'N', (byte)'1', (byte)' ', 0, (byte)'X'];
 
-            string value = MiniProtocol.ReadAsciiReportString(report, 5);
+            var value = MiniProtocol.ReadAsciiReportString(report, 5);
 
             Assert.Equal("SN1", value);
             Assert.Equal("ABC", MiniProtocol.ReadAsciiReportString([(byte)'A', (byte)'B', (byte)'C'], 0));
@@ -70,12 +72,12 @@ namespace SDMonitor.Tests
         [Fact]
         public void ParseKeyStatesReadsFirstSixPayloadBytes()
         {
-            byte[] input = new byte[MonitorMiniConstants.InputReportLength];
+            var input = new byte[MonitorMiniConstants.InputReportLength];
             input[0] = 0x01;
             input[1] = 0x01;
             input[4] = 0x01;
 
-            IReadOnlyList<MiniKeyState> states = MiniProtocol.ParseKeyStates(input);
+            var states = MiniProtocol.ParseKeyStates(input);
 
             Assert.True(states[0].IsPressed);
             Assert.False(states[1].IsPressed);
@@ -90,7 +92,7 @@ namespace SDMonitor.Tests
         {
             Assert.Throws<ArgumentException>(() => MiniProtocol.ParseKeyStates(new byte[64]));
 
-            byte[] input = new byte[MonitorMiniConstants.InputReportLength];
+            var input = new byte[MonitorMiniConstants.InputReportLength];
             input[0] = 0x02;
             Assert.Throws<ArgumentException>(() => MiniProtocol.ParseKeyStates(input));
         }
@@ -98,7 +100,7 @@ namespace SDMonitor.Tests
         [Fact]
         public void SolidBmpKeyImageCreatesEightyByEightyTwentyFourBitBmp()
         {
-            byte[] bmp = MiniProtocol.SolidBmpKeyImage(0x11, 0x22, 0x33);
+            var bmp = MiniProtocol.SolidBmpKeyImage(0x11, 0x22, 0x33);
 
             Assert.Equal((byte)'B', bmp[0]);
             Assert.Equal((byte)'M', bmp[1]);
@@ -117,7 +119,7 @@ namespace SDMonitor.Tests
                 new(0x40, 0x50, 0x60)
             ];
 
-            byte[] bmp = MiniProtocol.BmpFromPixels(pixels, width: 1, height: 2);
+            var bmp = MiniProtocol.BmpFromPixels(pixels, width: 1, height: 2);
 
             Assert.Equal(54 + 8, bmp.Length);
             Assert.Equal(0x30, bmp[54]);
@@ -139,9 +141,9 @@ namespace SDMonitor.Tests
         [Fact]
         public void ImageUploadReportsUsesMiniOutputReportHeaders()
         {
-            byte[] bmp = MiniProtocol.SolidBmpKeyImage(0x11, 0x22, 0x33);
+            var bmp = MiniProtocol.SolidBmpKeyImage(0x11, 0x22, 0x33);
 
-            IReadOnlyList<byte[]> reports = MiniProtocol.ImageUploadReports(2, bmp, showImage: true);
+            var reports = MiniProtocol.ImageUploadReports(2, bmp, showImage: true);
 
             Assert.All(reports, report => Assert.Equal(MonitorMiniConstants.OutputReportLength, report.Length));
             Assert.Equal((byte)'B', reports[0][MonitorMiniConstants.ImagePayloadOffset]);
@@ -158,7 +160,7 @@ namespace SDMonitor.Tests
         {
             byte[] bmp = [0x10, 0x20, 0x30];
 
-            IReadOnlyList<byte[]> reports = MiniProtocol.ImageUploadReports(0, bmp, showImage: false);
+            var reports = MiniProtocol.ImageUploadReports(0, bmp, showImage: false);
 
             Assert.Single(reports);
             Assert.Equal(0x00, reports[0][0x04]);

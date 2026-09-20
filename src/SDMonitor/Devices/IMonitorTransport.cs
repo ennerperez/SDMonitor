@@ -1,6 +1,6 @@
 using System;
 
-namespace SDMonitor
+namespace SDMonitor.Devices
 {
     public interface IMonitorTransport : IDisposable
     {

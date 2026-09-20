@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SDMonitor.Devices;
+using SDMonitor.Protocol;
 
-namespace SDMonitor
+namespace SDMonitor.Rendering
 {
     public static class KeyTileRenderer
     {
@@ -60,32 +62,32 @@ namespace SDMonitor
             return RenderTile(title, value, percent, TileRenderStyle.Default(accent));
         }
 
-        internal static byte[] RenderTile(string title, string value, double? percent, TileRenderStyle style)
+        public static byte[] RenderTile(string title, string value, double? percent, TileRenderStyle style)
         {
-            RgbColor[] pixels = new RgbColor[Width * Height];
+            var pixels = new RgbColor[Width * Height];
             Fill(pixels, style.BackgroundColor);
 
-            int margin = PercentToPixels(style.MarginPercent);
-            int padding = PercentToPixels(style.PaddingPercent);
-            int inset = margin + padding;
-            int borderSize = Math.Max(1, Width - (margin * 2));
+            var margin = PercentToPixels(style.MarginPercent);
+            var padding = PercentToPixels(style.PaddingPercent);
+            var inset = margin + padding;
+            var borderSize = Math.Max(1, Width - (margin * 2));
             DrawBorder(pixels, margin, margin, borderSize, borderSize, style.BorderColor);
 
-            int contentX = Math.Clamp(inset, 0, Width - 1);
-            int contentWidth = Math.Max(1, Width - (contentX * 2));
-            int titleY = Math.Clamp(margin + padding + 4, 0, Height - 1);
-            int barHeight = Math.Max(1, PercentToPixels(style.ProgressBarHeightPercent));
-            int barY = Math.Clamp(Height - inset - barHeight, 0, Height - barHeight);
-            int barWidth = Math.Max(1, Width - (contentX * 2));
+            var contentX = Math.Clamp(inset, 0, Width - 1);
+            var contentWidth = Math.Max(1, Width - (contentX * 2));
+            var titleY = Math.Clamp(margin + padding + 4, 0, Height - 1);
+            var barHeight = Math.Max(1, PercentToPixels(style.ProgressBarHeightPercent));
+            var barY = Math.Clamp(Height - inset - barHeight, 0, Height - barHeight);
+            var barWidth = Math.Max(1, Width - (contentX * 2));
 
             DrawTextCentered(pixels, title.ToUpperInvariant(), contentX, contentWidth, titleY, style.TitleSize, style.TitleColor);
 
-            int valueHeight = 7 * style.ValueSize;
-            int titleBottom = titleY + (7 * style.TitleSize);
-            int minValueY = titleBottom + Math.Max(2, padding / 2);
-            int maxValueY = Math.Max(0, barY - valueHeight - Math.Max(2, padding / 2));
-            int idealValueY = Math.Max(0, (barY - valueHeight) / 2);
-            int valueY = maxValueY >= minValueY
+            var valueHeight = 7 * style.ValueSize;
+            var titleBottom = titleY + (7 * style.TitleSize);
+            var minValueY = titleBottom + Math.Max(2, padding / 2);
+            var maxValueY = Math.Max(0, barY - valueHeight - Math.Max(2, padding / 2));
+            var idealValueY = Math.Max(0, (barY - valueHeight) / 2);
+            var valueY = maxValueY >= minValueY
                 ? Math.Clamp(idealValueY, minValueY, maxValueY)
                 : Math.Max(0, Math.Min(minValueY, Height - valueHeight));
 
@@ -97,7 +99,7 @@ namespace SDMonitor
                 return MiniProtocol.BmpFromPixels(RotateCounterClockwise(pixels), Width, Height);
             }
 
-            int fillWidth = (int)Math.Round(Math.Clamp(percent.Value, 0, 100) / 100.0 * barWidth);
+            var fillWidth = (int)Math.Round(Math.Clamp(percent.Value, 0, 100) / 100.0 * barWidth);
             FillRect(pixels, contentX, barY, fillWidth, barHeight, style.ProgressColor);
 
             return MiniProtocol.BmpFromPixels(RotateCounterClockwise(pixels), Width, Height);
@@ -105,7 +107,7 @@ namespace SDMonitor
 
         public static byte[] RenderLabelTile(string label, RgbColor accent)
         {
-            RgbColor[] pixels = new RgbColor[Width * Height];
+            var pixels = new RgbColor[Width * Height];
             Fill(pixels, new RgbColor(8, 10, 14));
             DrawBorder(pixels, 0, 0, Width, Height, accent);
             DrawTextCentered(pixels, label.ToUpperInvariant(), y: 30, scale: 2, new RgbColor(245, 248, 250));
@@ -146,8 +148,8 @@ namespace SDMonitor
 
         private static void DrawTextCentered(RgbColor[] pixels, string text, int x, int areaWidth, int y, int scale, RgbColor color)
         {
-            string fitted = FitText(text, scale, areaWidth);
-            int textWidth = TextWidth(fitted, scale);
+            var fitted = FitText(text, scale, areaWidth);
+            var textWidth = TextWidth(fitted, scale);
             DrawText(pixels, fitted, x + Math.Max(0, (areaWidth - textWidth) / 2), y, scale, color);
         }
 
@@ -174,8 +176,8 @@ namespace SDMonitor
 
         private static void DrawText(RgbColor[] pixels, string text, int x, int y, int scale, RgbColor color)
         {
-            int cursor = x;
-            foreach (char character in text)
+            var cursor = x;
+            foreach (var character in text)
             {
                 DrawCharacter(pixels, character, cursor, y, scale, color);
                 cursor += 6 * scale;
@@ -184,11 +186,11 @@ namespace SDMonitor
 
         private static void DrawCharacter(RgbColor[] pixels, char character, int x, int y, int scale, RgbColor color)
         {
-            string[] glyph = s_font.TryGetValue(character, out string[]? lines) ? lines : s_font[' '];
+            var glyph = s_font.TryGetValue(character, out var lines) ? lines : s_font[' '];
 
-            for (int row = 0; row < glyph.Length; row++)
+            for (var row = 0; row < glyph.Length; row++)
             {
-                for (int col = 0; col < glyph[row].Length; col++)
+                for (var col = 0; col < glyph[row].Length; col++)
                 {
                     if (glyph[row][col] != '1')
                     {
@@ -207,9 +209,9 @@ namespace SDMonitor
                 return;
             }
 
-            for (int row = 0; row < height; row++)
+            for (var row = 0; row < height; row++)
             {
-                for (int col = 0; col < width; col++)
+                for (var col = 0; col < width; col++)
                 {
                     SetPixel(pixels, x + col, y + row, color);
                 }
@@ -228,13 +230,13 @@ namespace SDMonitor
 
         private static RgbColor[] RotateCounterClockwise(RgbColor[] source)
         {
-            RgbColor[] rotated = new RgbColor[source.Length];
-            for (int y = 0; y < Height; y++)
+            var rotated = new RgbColor[source.Length];
+            for (var y = 0; y < Height; y++)
             {
-                for (int x = 0; x < Width; x++)
+                for (var x = 0; x < Width; x++)
                 {
-                    int targetX = y;
-                    int targetY = Width - 1 - x;
+                    var targetX = y;
+                    var targetY = Width - 1 - x;
                     rotated[targetY * Width + targetX] = source[y * Width + x];
                 }
             }
@@ -248,7 +250,7 @@ namespace SDMonitor
         }
     }
 
-    internal sealed record TileRenderStyle(
+    public record TileRenderStyle(
         string Font,
         int TitleSize,
         int ValueSize,

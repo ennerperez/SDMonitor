@@ -1,14 +1,15 @@
 using System.Linq;
+using SDMonitor.Dashboard;
 using Xunit;
 
-namespace SDMonitor.Tests
+namespace SDMonitor.UnitTests
 {
-    public sealed class LinuxHardwareSamplerTests
+    public sealed class WindowsHardwareSamplerTests
     {
         [Fact]
         public void SampleReturnsAllDashboardMetrics()
         {
-            LinuxHardwareSampler sampler = new();
+            WindowsHardwareSampler sampler = new();
 
             DashboardMetric[] metrics = sampler.Sample();
             DashboardMetric[] secondSample = sampler.Sample();

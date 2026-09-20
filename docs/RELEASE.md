@@ -54,7 +54,7 @@ chmod +x sdmonitor-<version>-linux-x64
 sudo install -m 755 sdmonitor-<version>-linux-x64 /usr/local/bin/sdmonitor
 ```
 
-macOS Apple Silicon:
+Osx Apple Silicon:
 
 ```bash
 chmod +x sdmonitor-<version>-osx-arm64

@@ -1,14 +1,15 @@
 using System.Linq;
+using SDMonitor.Dashboard;
 using Xunit;
 
-namespace SDMonitor.Tests
+namespace SDMonitor.UnitTests
 {
-    public sealed class MacOSHardwareSamplerTests
+    public sealed class OsxHardwareSamplerTests
     {
         [Fact]
         public void SampleReturnsAllDashboardMetrics()
         {
-            MacOSHardwareSampler sampler = new();
+            OsxHardwareSampler sampler = new();
 
             DashboardMetric[] metrics = sampler.Sample();
             DashboardMetric[] secondSample = sampler.Sample();

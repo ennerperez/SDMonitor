@@ -1,6 +1,8 @@
-namespace SDMonitor
+using SDMonitor.Rendering;
+
+namespace SDMonitor.Dashboard
 {
-    internal sealed record DashboardMetric(
+    public record DashboardMetric(
         string Metric,
         string Title,
         string Value,

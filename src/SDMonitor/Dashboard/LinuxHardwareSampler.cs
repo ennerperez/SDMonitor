@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using SDMonitor.Rendering;
 
-namespace SDMonitor
+namespace SDMonitor.Dashboard
 {
-    internal sealed class LinuxHardwareSampler : IHardwareSampler
+    public class LinuxHardwareSampler : IHardwareSampler
     {
         private CpuSample? _previousCpu;
         private NetworkSample? _previousNetwork;
@@ -15,11 +16,11 @@ namespace SDMonitor
 
         public DashboardMetric[] Sample()
         {
-            double? cpuPercent = ReadCpuPercent();
-            double? ramPercent = ReadRamPercent();
-            double? gpuPercent = ReadNvidiaGpuPercent();
-            double? diskPercent = ReadRootDiskPercent();
-            (double uploadBytesPerSecond, double downloadBytesPerSecond) = ReadNetworkBytesPerSecond();
+            var cpuPercent = ReadCpuPercent();
+            var ramPercent = ReadRamPercent();
+            var gpuPercent = ReadNvidiaGpuPercent();
+            var diskPercent = ReadRootDiskPercent();
+            (var uploadBytesPerSecond, var downloadBytesPerSecond) = ReadNetworkBytesPerSecond();
 
             return
             [
@@ -39,28 +40,28 @@ namespace SDMonitor
                 return null;
             }
 
-            string? line = File.ReadLines("/proc/stat").FirstOrDefault();
+            var line = File.ReadLines("/proc/stat").FirstOrDefault();
             if (line is null || !line.StartsWith("cpu ", StringComparison.Ordinal))
             {
                 return null;
             }
 
-            string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length < 5)
             {
                 return null;
             }
 
-            ulong[] values = parts.Skip(1).Select(value => ulong.TryParse(value, out ulong parsed) ? parsed : 0).ToArray();
-            ulong idle = values.ElementAtOrDefault(3) + values.ElementAtOrDefault(4);
+            var values = parts.Skip(1).Select(value => ulong.TryParse(value, out var parsed) ? parsed : 0).ToArray();
+            var idle = values.ElementAtOrDefault(3) + values.ElementAtOrDefault(4);
             ulong total = 0;
-            foreach (ulong value in values)
+            foreach (var value in values)
             {
                 total += value;
             }
 
             CpuSample current = new(total, idle);
-            CpuSample? previous = _previousCpu;
+            var previous = _previousCpu;
             _previousCpu = current;
 
             if (previous is null)
@@ -68,8 +69,8 @@ namespace SDMonitor
                 return 0;
             }
 
-            ulong totalDelta = current.Total - previous.Total;
-            ulong idleDelta = current.Idle - previous.Idle;
+            var totalDelta = current.Total - previous.Total;
+            var idleDelta = current.Idle - previous.Idle;
             if (totalDelta == 0)
             {
                 return 0;
@@ -85,13 +86,13 @@ namespace SDMonitor
                 return null;
             }
 
-            Dictionary<string, ulong> values = File.ReadLines("/proc/meminfo")
+            var values = File.ReadLines("/proc/meminfo")
                 .Select(ParseMemInfoLine)
                 .Where(pair => pair.HasValue)
                 .ToDictionary(pair => pair!.Value.Key, pair => pair!.Value.Value);
 
-            if (!values.TryGetValue("MemTotal", out ulong total) ||
-                !values.TryGetValue("MemAvailable", out ulong available) ||
+            if (!values.TryGetValue("MemTotal", out var total) ||
+                !values.TryGetValue("MemAvailable", out var available) ||
                 total == 0)
             {
                 return null;
@@ -102,8 +103,8 @@ namespace SDMonitor
 
         private static KeyValuePair<string, ulong>? ParseMemInfoLine(string line)
         {
-            string[] parts = line.Split([':', ' '], StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 2 || !ulong.TryParse(parts[1], out ulong value))
+            var parts = line.Split([':', ' '], StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2 || !ulong.TryParse(parts[1], out var value))
             {
                 return null;
             }
@@ -128,14 +129,14 @@ namespace SDMonitor
                 };
 
                 process.Start();
-                string output = process.StandardOutput.ReadToEnd();
+                var output = process.StandardOutput.ReadToEnd();
                 if (!process.WaitForExit(500) || process.ExitCode != 0)
                 {
                     return null;
                 }
 
-                string? firstValue = output.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-                return double.TryParse(firstValue, out double value) ? Math.Clamp(value, 0, 100) : null;
+                var firstValue = output.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                return double.TryParse(firstValue, out var value) ? Math.Clamp(value, 0, 100) : null;
             }
             catch
             {
@@ -156,8 +157,8 @@ namespace SDMonitor
 
         private (double UploadBytesPerSecond, double DownloadBytesPerSecond) ReadNetworkBytesPerSecond()
         {
-            NetworkSample current = ReadNetworkSample();
-            NetworkSample? previous = _previousNetwork;
+            var current = ReadNetworkSample();
+            var previous = _previousNetwork;
             _previousNetwork = current;
 
             if (previous is null)
@@ -165,7 +166,7 @@ namespace SDMonitor
                 return (0, 0);
             }
 
-            double seconds = Math.Max((current.Timestamp - previous.Timestamp).TotalSeconds, 0.001);
+            var seconds = Math.Max((current.Timestamp - previous.Timestamp).TotalSeconds, 0.001);
             return (
                 (current.TransmitBytes - previous.TransmitBytes) / seconds,
                 (current.ReceiveBytes - previous.ReceiveBytes) / seconds);
@@ -181,32 +182,32 @@ namespace SDMonitor
                 return new NetworkSample(DateTimeOffset.UtcNow, receive, transmit);
             }
 
-            foreach (string line in File.ReadLines("/proc/net/dev").Skip(2))
+            foreach (var line in File.ReadLines("/proc/net/dev").Skip(2))
             {
-                string[] nameAndValues = line.Split(':', 2);
+                var nameAndValues = line.Split(':', 2);
                 if (nameAndValues.Length != 2)
                 {
                     continue;
                 }
 
-                string interfaceName = nameAndValues[0].Trim();
+                var interfaceName = nameAndValues[0].Trim();
                 if (interfaceName == "lo")
                 {
                     continue;
                 }
 
-                string[] values = nameAndValues[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var values = nameAndValues[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (values.Length < 16)
                 {
                     continue;
                 }
 
-                if (ulong.TryParse(values[0], out ulong rx))
+                if (ulong.TryParse(values[0], out var rx))
                 {
                     receive += rx;
                 }
 
-                if (ulong.TryParse(values[8], out ulong tx))
+                if (ulong.TryParse(values[8], out var tx))
                 {
                     transmit += tx;
                 }
@@ -223,13 +224,13 @@ namespace SDMonitor
 
         private static DashboardMetric RateMetric(string metric, string title, double bytesPerSecond, ref double maxBytesPerSecond, RgbColor accent)
         {
-            double roundedBytesPerSecond = RoundRate(bytesPerSecond);
+            var roundedBytesPerSecond = RoundRate(bytesPerSecond);
             if (roundedBytesPerSecond > maxBytesPerSecond)
             {
                 maxBytesPerSecond = roundedBytesPerSecond;
             }
 
-            double percent = maxBytesPerSecond <= 0
+            var percent = maxBytesPerSecond <= 0
                 ? 0
                 : Math.Clamp(roundedBytesPerSecond / maxBytesPerSecond * 100, 0, 100);
 

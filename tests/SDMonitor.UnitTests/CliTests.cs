@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using Xunit;
 
-namespace SDMonitor.Tests
+namespace SDMonitor.UnitTests
 {
     public sealed class CliTests
     {
@@ -15,10 +15,10 @@ namespace SDMonitor.Tests
         [InlineData("dashboard 249", 1, "Invalid interval-ms. Expected integer from 250 to 60000.")]
         public void CommandLineHandlesNonHardwarePaths(string arguments, int exitCode, string expectedOutput)
         {
-            using Process process = StartCli(arguments);
+            using var process = StartCli(arguments);
 
             Assert.True(process.WaitForExit(5000));
-            string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+            var output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
 
             Assert.Equal(exitCode, process.ExitCode);
             Assert.Contains(expectedOutput, output, StringComparison.Ordinal);
@@ -26,7 +26,7 @@ namespace SDMonitor.Tests
 
         private static Process StartCli(string arguments)
         {
-            string executable = Path.Combine(AppContext.BaseDirectory, "sdmonitor");
+            var executable = Path.Combine(AppContext.BaseDirectory, "sdmonitor");
             return Process.Start(new ProcessStartInfo
             {
                 FileName = executable,

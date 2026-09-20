@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>sdmonitor</AssemblyName>
+    <AssemblyName>SDMonitor</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
@@ -12,8 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="SDMonitor.Tests" />
-    <InternalsVisibleTo Include="sdmonitor-simulator" />
+    <InternalsVisibleTo Include="SDMonitor.UnitTests" />
+    <InternalsVisibleTo Include="SDMonitor.Simulator" />
   </ItemGroup>
 
 </Project>

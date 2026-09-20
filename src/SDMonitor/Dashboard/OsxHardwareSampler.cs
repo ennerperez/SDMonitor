@@ -4,10 +4,11 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
+using SDMonitor.Rendering;
 
-namespace SDMonitor
+namespace SDMonitor.Dashboard
 {
-    internal sealed class MacOSHardwareSampler : IHardwareSampler
+    public class OsxHardwareSampler : IHardwareSampler
     {
         private NetworkSample? _previousNetwork;
         private double _maxUploadBytesPerSecond;
@@ -15,11 +16,11 @@ namespace SDMonitor
 
         public DashboardMetric[] Sample()
         {
-            double? cpuPercent = ReadCpuPercent();
-            double? ramPercent = ReadRamPercent();
-            double? gpuPercent = ReadGpuPercent();
-            double? diskPercent = ReadRootDiskPercent();
-            (double uploadBytesPerSecond, double downloadBytesPerSecond) = ReadNetworkBytesPerSecond();
+            var cpuPercent = ReadCpuPercent();
+            var ramPercent = ReadRamPercent();
+            var gpuPercent = ReadGpuPercent();
+            var diskPercent = ReadRootDiskPercent();
+            (var uploadBytesPerSecond, var downloadBytesPerSecond) = ReadNetworkBytesPerSecond();
 
             return
             [
@@ -34,34 +35,34 @@ namespace SDMonitor
 
         private static double? ReadCpuPercent()
         {
-            string? output = RunCommand("top", 1_000, "-l", "1", "-n", "0", "-s", "0");
-            string? cpuLine = output?
+            var output = RunCommand("top", 1_000, "-l", "1", "-n", "0", "-s", "0");
+            var cpuLine = output?
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .FirstOrDefault(line => line.StartsWith("CPU usage:", StringComparison.Ordinal));
 
-            double? idle = ReadPercentageBefore(cpuLine, " idle");
+            var idle = ReadPercentageBefore(cpuLine, " idle");
             return idle.HasValue ? Math.Clamp(100 - idle.Value, 0, 100) : null;
         }
 
         private static double? ReadRamPercent()
         {
-            string? totalOutput = RunCommand("sysctl", 500, "-n", "hw.memsize");
-            if (!ulong.TryParse(totalOutput?.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out ulong totalBytes) ||
+            var totalOutput = RunCommand("sysctl", 500, "-n", "hw.memsize");
+            if (!ulong.TryParse(totalOutput?.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var totalBytes) ||
                 totalBytes == 0)
             {
                 return null;
             }
 
-            string? vmStat = RunCommand("vm_stat", 500);
-            ulong pageSize = ReadPageSize(vmStat);
+            var vmStat = RunCommand("vm_stat", 500);
+            var pageSize = ReadPageSize(vmStat);
             if (pageSize == 0)
             {
                 return null;
             }
 
-            ulong freePages = ReadPageCount(vmStat, "Pages free");
-            ulong speculativePages = ReadPageCount(vmStat, "Pages speculative");
-            ulong availableBytes = (freePages + speculativePages) * pageSize;
+            var freePages = ReadPageCount(vmStat, "Pages free");
+            var speculativePages = ReadPageCount(vmStat, "Pages speculative");
+            var availableBytes = (freePages + speculativePages) * pageSize;
             if (availableBytes > totalBytes)
             {
                 availableBytes = totalBytes;
@@ -72,7 +73,7 @@ namespace SDMonitor
 
         private static double? ReadGpuPercent()
         {
-            string? output = RunCommand("ioreg", 750, "-r", "-d", "1", "-w", "0", "-c", "AGXAccelerator");
+            var output = RunCommand("ioreg", 750, "-r", "-d", "1", "-w", "0", "-c", "AGXAccelerator");
             return ReadNamedNumber(output, "Device Utilization %");
         }
 
@@ -89,8 +90,8 @@ namespace SDMonitor
 
         private (double UploadBytesPerSecond, double DownloadBytesPerSecond) ReadNetworkBytesPerSecond()
         {
-            NetworkSample current = ReadNetworkSample();
-            NetworkSample? previous = _previousNetwork;
+            var current = ReadNetworkSample();
+            var previous = _previousNetwork;
             _previousNetwork = current;
 
             if (previous is null)
@@ -98,7 +99,7 @@ namespace SDMonitor
                 return (0, 0);
             }
 
-            double seconds = Math.Max((current.Timestamp - previous.Timestamp).TotalSeconds, 0.001);
+            var seconds = Math.Max((current.Timestamp - previous.Timestamp).TotalSeconds, 0.001);
             return (
                 ByteDelta(previous.TransmitBytes, current.TransmitBytes) / seconds,
                 ByteDelta(previous.ReceiveBytes, current.ReceiveBytes) / seconds);
@@ -109,7 +110,7 @@ namespace SDMonitor
             ulong receive = 0;
             ulong transmit = 0;
 
-            foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
+            foreach (var networkInterface in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (networkInterface.OperationalStatus != OperationalStatus.Up ||
                     networkInterface.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel)
@@ -119,7 +120,7 @@ namespace SDMonitor
 
                 try
                 {
-                    IPv4InterfaceStatistics statistics = networkInterface.GetIPv4Statistics();
+                    var statistics = networkInterface.GetIPv4Statistics();
                     receive += ToUInt64(statistics.BytesReceived);
                     transmit += ToUInt64(statistics.BytesSent);
                 }
@@ -146,19 +147,20 @@ namespace SDMonitor
                     }
                 };
 
-                foreach (string argument in arguments)
+                foreach (var argument in arguments)
                 {
                     process.StartInfo.ArgumentList.Add(argument);
                 }
 
                 process.Start();
-                if (!process.WaitForExit(timeoutMilliseconds))
+                if (process.WaitForExit(timeoutMilliseconds))
                 {
-                    process.Kill(entireProcessTree: true);
-                    return null;
+                    return process.ExitCode == 0 ? process.StandardOutput.ReadToEnd() : null;
                 }
 
-                return process.ExitCode == 0 ? process.StandardOutput.ReadToEnd() : null;
+                process.Kill(entireProcessTree: true);
+                return null;
+
             }
             catch
             {
@@ -168,7 +170,7 @@ namespace SDMonitor
 
         private static ulong ReadPageSize(string? vmStat)
         {
-            string? firstLine = vmStat?
+            var firstLine = vmStat?
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .FirstOrDefault();
             if (firstLine is null)
@@ -177,23 +179,23 @@ namespace SDMonitor
             }
 
             const string marker = "page size of ";
-            int start = firstLine.IndexOf(marker, StringComparison.Ordinal);
+            var start = firstLine.IndexOf(marker, StringComparison.Ordinal);
             if (start < 0)
             {
                 return 0;
             }
 
             start += marker.Length;
-            int end = firstLine.IndexOf(' ', start);
-            string pageSizeText = end < 0 ? firstLine[start..] : firstLine[start..end];
-            return ulong.TryParse(pageSizeText, NumberStyles.None, CultureInfo.InvariantCulture, out ulong pageSize)
+            var end = firstLine.IndexOf(' ', start);
+            var pageSizeText = end < 0 ? firstLine[start..] : firstLine[start..end];
+            return ulong.TryParse(pageSizeText, NumberStyles.None, CultureInfo.InvariantCulture, out var pageSize)
                 ? pageSize
                 : 0;
         }
 
         private static ulong ReadPageCount(string? vmStat, string name)
         {
-            string? line = vmStat?
+            var line = vmStat?
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .FirstOrDefault(value => value.StartsWith(name + ":", StringComparison.Ordinal));
             if (line is null)
@@ -201,8 +203,8 @@ namespace SDMonitor
                 return 0;
             }
 
-            string valueText = line.Split(':', 2)[1].Trim().TrimEnd('.').Replace(",", string.Empty, StringComparison.Ordinal);
-            return ulong.TryParse(valueText, NumberStyles.None, CultureInfo.InvariantCulture, out ulong value) ? value : 0;
+            var valueText = line.Split(':', 2)[1].Trim().TrimEnd('.').Replace(",", string.Empty, StringComparison.Ordinal);
+            return ulong.TryParse(valueText, NumberStyles.None, CultureInfo.InvariantCulture, out var value) ? value : 0;
         }
 
         private static double? ReadPercentageBefore(string? text, string token)
@@ -212,20 +214,20 @@ namespace SDMonitor
                 return null;
             }
 
-            int end = text.IndexOf(token, StringComparison.Ordinal);
+            var end = text.IndexOf(token, StringComparison.Ordinal);
             if (end <= 0)
             {
                 return null;
             }
 
-            int start = end - 1;
+            var start = end - 1;
             while (start >= 0 && (char.IsDigit(text[start]) || text[start] == '.'))
             {
                 start--;
             }
 
-            string valueText = text[(start + 1)..end];
-            return double.TryParse(valueText, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
+            var valueText = text[(start + 1)..end];
+            return double.TryParse(valueText, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
                 ? value
                 : null;
         }
@@ -237,13 +239,13 @@ namespace SDMonitor
                 return null;
             }
 
-            int nameIndex = text.IndexOf(name, StringComparison.Ordinal);
+            var nameIndex = text.IndexOf(name, StringComparison.Ordinal);
             if (nameIndex < 0)
             {
                 return null;
             }
 
-            int valueStart = text.IndexOf('=', nameIndex);
+            var valueStart = text.IndexOf('=', nameIndex);
             if (valueStart < 0)
             {
                 return null;
@@ -255,13 +257,13 @@ namespace SDMonitor
                 valueStart++;
             }
 
-            int valueEnd = valueStart;
+            var valueEnd = valueStart;
             while (valueEnd < text.Length && (char.IsDigit(text[valueEnd]) || text[valueEnd] == '.'))
             {
                 valueEnd++;
             }
 
-            return double.TryParse(text[valueStart..valueEnd], NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
+            return double.TryParse(text[valueStart..valueEnd], NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
                 ? Math.Clamp(value, 0, 100)
                 : null;
         }
@@ -284,13 +286,13 @@ namespace SDMonitor
 
         private static DashboardMetric RateMetric(string metric, string title, double bytesPerSecond, ref double maxBytesPerSecond, RgbColor accent)
         {
-            double roundedBytesPerSecond = RoundRate(bytesPerSecond);
+            var roundedBytesPerSecond = RoundRate(bytesPerSecond);
             if (roundedBytesPerSecond > maxBytesPerSecond)
             {
                 maxBytesPerSecond = roundedBytesPerSecond;
             }
 
-            double percent = maxBytesPerSecond <= 0
+            var percent = maxBytesPerSecond <= 0
                 ? 0
                 : Math.Clamp(roundedBytesPerSecond / maxBytesPerSecond * 100, 0, 100);
 

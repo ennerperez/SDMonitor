@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using SDMonitor.Devices;
 using Xunit;
 
-namespace SDMonitor.Tests
+namespace SDMonitor.UnitTests
 {
     public sealed class MonitorMiniTests
     {
@@ -42,8 +43,8 @@ namespace SDMonitor.Tests
             transport.FeatureResponses[0xA1] = FeatureReport(0xA1, " FW1 ");
             using MonitorMini deck = new(transport);
 
-            string serial = deck.GetSerialNumber();
-            string firmware = deck.GetFirmwareVersion();
+            var serial = deck.GetSerialNumber();
+            var firmware = deck.GetFirmwareVersion();
 
             Assert.Equal("SERIAL1", serial);
             Assert.Equal("FW1", firmware);
@@ -59,7 +60,7 @@ namespace SDMonitor.Tests
             using MonitorMini deck = new(transport);
 
             Assert.Null(deck.PollKeys());
-            IReadOnlyList<MiniKeyState> states = deck.PollKeys()!;
+            var states = deck.PollKeys()!;
 
             Assert.NotNull(states);
             Assert.False(states[0].IsPressed);
@@ -98,9 +99,9 @@ namespace SDMonitor.Tests
 
         private static byte[] FeatureReport(byte reportId, string value)
         {
-            byte[] report = new byte[MonitorMiniConstants.FeatureReportLength];
+            var report = new byte[MonitorMiniConstants.FeatureReportLength];
             report[0] = reportId;
-            for (int i = 0; i < value.Length; i++)
+            for (var i = 0; i < value.Length; i++)
             {
                 report[5 + i] = (byte)value[i];
             }
@@ -110,7 +111,7 @@ namespace SDMonitor.Tests
 
         private static byte[] KeyReport(int pressedKey)
         {
-            byte[] report = new byte[MonitorMiniConstants.InputReportLength];
+            var report = new byte[MonitorMiniConstants.InputReportLength];
             report[0] = 0x01;
             report[pressedKey + 1] = 0x01;
             return report;
@@ -145,12 +146,12 @@ namespace SDMonitor.Tests
             public byte[] GetFeatureReport(byte reportId, int length)
             {
                 FeatureRequestIds.Add(reportId);
-                return FeatureResponses.TryGetValue(reportId, out byte[] report) ? report : new byte[length];
+                return FeatureResponses.TryGetValue(reportId, out var report) ? report : new byte[length];
             }
 
             public int ReadInputReport(Span<byte> buffer, int timeoutMilliseconds)
             {
-                byte[] report = InputReads.Dequeue();
+                var report = InputReads.Dequeue();
                 report.CopyTo(buffer);
                 return report.Length;
             }

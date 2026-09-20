@@ -5,25 +5,26 @@ using SDMonitor.Simulator.Services;
 using SDMonitor.Simulator.ViewModels;
 using SDMonitor.Simulator.Views;
 
-namespace SDMonitor.Simulator;
-
-public sealed partial class App : Application
+namespace SDMonitor.Simulator
 {
-    public override void Initialize()
+    public sealed partial class App : Application
     {
-        AvaloniaXamlLoader.Load(this);
-    }
-
-    public override void OnFrameworkInitializationCompleted()
-    {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        public override void Initialize()
         {
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainWindowViewModel(new DashboardSimulationService())
-            };
+            AvaloniaXamlLoader.Load(this);
         }
 
-        base.OnFrameworkInitializationCompleted();
+        public override void OnFrameworkInitializationCompleted()
+        {
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.MainWindow = new MainWindow
+                {
+                    DataContext = new MainWindowViewModel(new DashboardSimulationService())
+                };
+            }
+
+            base.OnFrameworkInitializationCompleted();
+        }
     }
 }

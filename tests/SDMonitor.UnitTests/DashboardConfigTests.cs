@@ -1,50 +1,53 @@
 using System;
 using System.IO;
+using SDMonitor.Dashboard;
+using SDMonitor.Devices;
+using SDMonitor.Rendering;
 using Xunit;
 
-namespace SDMonitor.Tests
+namespace SDMonitor.UnitTests
 {
     public sealed class DashboardConfigTests
     {
         [Fact]
         public void LoadReadsJsonOrdersTilesAndAppliesRefreshOverride()
         {
-            string path = WriteTempConfig("""
-            {
-              // comments and trailing commas are allowed
-              "tiles": [
-                {
-                  "metric": "RAM",
-                  "title": " Memory ",
-                  "position": 2,
-                  "refreshMilliseconds": 2000,
-                  "borderColor": "78DC50",
-                  "progressColor": "#78DC50",
-                  "backgroundColor": "#080A0E",
-                  "titleColor": "#AAB4BE",
-                  "valueColor": "#F5F8FA",
-                },
-                {
-                  "metric": "cpu",
-                  "title": "CPU",
-                  "position": 1,
-                  "refreshMilliseconds": 1500,
-                  "thresholdsEnabled": true,
-                  "thresholds": [
-                    {
-                      "minPercent": 80,
-                      "titleSize": 2,
-                      "valueSize": 3,
-                      "borderColor": "#FF0000",
-                      "backgroundColor": "#110000",
-                      "fontColor": "#FFFFFF",
-                      "valueColor": "#FFFF00"
-                    }
-                  ]
-                }
-              ],
-            }
-            """);
+            var path = WriteTempConfig("""
+                                       {
+                                         // comments and trailing commas are allowed
+                                         "tiles": [
+                                           {
+                                             "metric": "RAM",
+                                             "title": " Memory ",
+                                             "position": 2,
+                                             "refreshMilliseconds": 2000,
+                                             "borderColor": "78DC50",
+                                             "progressColor": "#78DC50",
+                                             "backgroundColor": "#080A0E",
+                                             "titleColor": "#AAB4BE",
+                                             "valueColor": "#F5F8FA",
+                                           },
+                                           {
+                                             "metric": "cpu",
+                                             "title": "CPU",
+                                             "position": 1,
+                                             "refreshMilliseconds": 1500,
+                                             "thresholdsEnabled": true,
+                                             "thresholds": [
+                                               {
+                                                 "minPercent": 80,
+                                                 "titleSize": 2,
+                                                 "valueSize": 3,
+                                                 "borderColor": "#FF0000",
+                                                 "backgroundColor": "#110000",
+                                                 "fontColor": "#FFFFFF",
+                                                 "valueColor": "#FFFF00"
+                                               }
+                                             ]
+                                           }
+                                         ],
+                                       }
+                                       """);
 
             DashboardConfig config = DashboardConfig.Load(path, refreshOverrideMilliseconds: 500);
 
@@ -125,11 +128,11 @@ namespace SDMonitor.Tests
         public void LoadCreatesDefaultTilesFileWhenNoConfigFileExists()
         {
             using TempDirectory temp = new();
-            string defaultConfigDirectory = Path.Combine(temp.Path, "SDMonitor");
+            var defaultConfigDirectory = Path.Combine(temp.Path, "SDMonitor");
 
             DashboardConfig config = DashboardConfig.Load(null, null, defaultConfigDirectory);
 
-            string path = Path.Combine(defaultConfigDirectory, DashboardConfig.DefaultFileName);
+            var path = Path.Combine(defaultConfigDirectory, DashboardConfig.DefaultFileName);
             Assert.True(Directory.Exists(defaultConfigDirectory));
             Assert.True(File.Exists(path));
             Assert.Equal(MonitorMiniConstants.KeyCount, config.Tiles.Count);
@@ -185,7 +188,7 @@ namespace SDMonitor.Tests
 
         private static string WriteTempConfig(string json)
         {
-            string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.json");
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.json");
             File.WriteAllText(path, json);
             return path;
         }

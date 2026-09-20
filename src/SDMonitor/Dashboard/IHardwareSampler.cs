@@ -1,6 +1,6 @@
-namespace SDMonitor
+namespace SDMonitor.Dashboard
 {
-    internal interface IHardwareSampler
+    public interface IHardwareSampler
     {
         DashboardMetric[] Sample();
     }

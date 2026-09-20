@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using HidSharp;
 
-namespace SDMonitor
+namespace SDMonitor.Devices
 {
     [ExcludeFromCodeCoverage]
     public sealed class HidSharpMonitorTransport : IMonitorTransport
@@ -42,7 +42,7 @@ namespace SDMonitor
 
         public static HidSharpMonitorTransport OpenFirst()
         {
-            HidDevice? device = DeviceList.Local
+            var device = DeviceList.Local
                 .GetHidDevices(MonitorMiniConstants.VendorId)
                 .Where(IsSupportedMini)
                 .FirstOrDefault();
@@ -52,7 +52,7 @@ namespace SDMonitor
                 throw new InvalidOperationException("No supported Stream Deck Mini HID device was found.");
             }
 
-            if (!device.TryOpen(out HidStream stream))
+            if (!device.TryOpen(out var stream))
             {
                 throw new InvalidOperationException("Stream Deck Mini was found, but HID handle could not be opened.");
             }
@@ -75,7 +75,7 @@ namespace SDMonitor
 
         public byte[] GetFeatureReport(byte reportId, int length)
         {
-            byte[] report = new byte[length];
+            var report = new byte[length];
             report[0] = reportId;
             _stream.GetFeature(report);
             return report;
@@ -83,12 +83,12 @@ namespace SDMonitor
 
         public int ReadInputReport(Span<byte> buffer, int timeoutMilliseconds)
         {
-            byte[] local = new byte[buffer.Length];
+            var local = new byte[buffer.Length];
             _stream.ReadTimeout = timeoutMilliseconds;
 
             try
             {
-                int read = _stream.Read(local);
+                var read = _stream.Read(local);
                 local.AsSpan(0, read).CopyTo(buffer);
                 return read;
             }

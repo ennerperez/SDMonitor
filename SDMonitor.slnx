@@ -17,6 +17,7 @@
     <File Path=".github\workflows\build.yml" />
     <File Path=".github\workflows\ci.yml" />
     <File Path=".github\workflows\package.yml" />
+    <File Path=".github\workflows\pull_request.yml" />
     <File Path=".github\workflows\release.yml" />
   </Folder>
   <Folder Name="/src/">
@@ -24,6 +25,6 @@
     <Project Path="src/SDMonitor.Simulator/SDMonitor.Simulator.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/SDMonitor.Tests/SDMonitor.Tests.csproj" />
+    <Project Path="tests/SDMonitor.UnitTests/SDMonitor.UnitTests.csproj" />
   </Folder>
 </Solution>

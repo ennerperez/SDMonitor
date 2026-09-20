@@ -4,10 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
+using SDMonitor.Rendering;
 
-namespace SDMonitor
+namespace SDMonitor.Dashboard
 {
-    internal sealed class WindowsHardwareSampler : IHardwareSampler
+    public class WindowsHardwareSampler : IHardwareSampler
     {
         private CpuSample? _previousCpu;
         private NetworkSample? _previousNetwork;
@@ -16,11 +17,11 @@ namespace SDMonitor
 
         public DashboardMetric[] Sample()
         {
-            double? cpuPercent = ReadCpuPercent();
-            double? ramPercent = ReadRamPercent();
-            double? gpuPercent = ReadNvidiaGpuPercent();
-            double? diskPercent = ReadSystemDiskPercent();
-            (double uploadBytesPerSecond, double downloadBytesPerSecond) = ReadNetworkBytesPerSecond();
+            var cpuPercent = ReadCpuPercent();
+            var ramPercent = ReadRamPercent();
+            var gpuPercent = ReadNvidiaGpuPercent();
+            var diskPercent = ReadSystemDiskPercent();
+            (var uploadBytesPerSecond, var downloadBytesPerSecond) = ReadNetworkBytesPerSecond();
 
             return
             [
@@ -36,7 +37,7 @@ namespace SDMonitor
         private double? ReadCpuPercent()
         {
             CpuSample current = new(DateTimeOffset.UtcNow, ReadProcessCpuTicks());
-            CpuSample? previous = _previousCpu;
+            var previous = _previousCpu;
             _previousCpu = current;
 
             if (previous is null)
@@ -44,22 +45,22 @@ namespace SDMonitor
                 return 0;
             }
 
-            double elapsedTicks = (current.Timestamp - previous.Timestamp).TotalSeconds *
-                Environment.ProcessorCount *
-                TimeSpan.TicksPerSecond;
+            var elapsedTicks = (current.Timestamp - previous.Timestamp).TotalSeconds *
+                               Environment.ProcessorCount *
+                               TimeSpan.TicksPerSecond;
             if (elapsedTicks <= 0)
             {
                 return 0;
             }
 
-            long cpuTicks = current.ProcessCpuTicks - previous.ProcessCpuTicks;
+            var cpuTicks = current.ProcessCpuTicks - previous.ProcessCpuTicks;
             return Math.Clamp(cpuTicks / elapsedTicks * 100, 0, 100);
         }
 
         private static long ReadProcessCpuTicks()
         {
             long ticks = 0;
-            foreach (Process process in Process.GetProcesses())
+            foreach (var process in Process.GetProcesses())
             {
                 try
                 {
@@ -116,14 +117,14 @@ namespace SDMonitor
                 };
 
                 process.Start();
-                string output = process.StandardOutput.ReadToEnd();
+                var output = process.StandardOutput.ReadToEnd();
                 if (!process.WaitForExit(500) || process.ExitCode != 0)
                 {
                     return null;
                 }
 
-                string? firstValue = output.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-                return double.TryParse(firstValue, out double value) ? Math.Clamp(value, 0, 100) : null;
+                var firstValue = output.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                return double.TryParse(firstValue, out var value) ? Math.Clamp(value, 0, 100) : null;
             }
             catch
             {
@@ -135,7 +136,7 @@ namespace SDMonitor
         {
             try
             {
-                string? rootPath = Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.System));
+                var rootPath = Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.System));
                 if (string.IsNullOrWhiteSpace(rootPath))
                 {
                     rootPath = Path.GetPathRoot(Environment.SystemDirectory);
@@ -162,8 +163,8 @@ namespace SDMonitor
 
         private (double UploadBytesPerSecond, double DownloadBytesPerSecond) ReadNetworkBytesPerSecond()
         {
-            NetworkSample current = ReadNetworkSample();
-            NetworkSample? previous = _previousNetwork;
+            var current = ReadNetworkSample();
+            var previous = _previousNetwork;
             _previousNetwork = current;
 
             if (previous is null)
@@ -171,7 +172,7 @@ namespace SDMonitor
                 return (0, 0);
             }
 
-            double seconds = Math.Max((current.Timestamp - previous.Timestamp).TotalSeconds, 0.001);
+            var seconds = Math.Max((current.Timestamp - previous.Timestamp).TotalSeconds, 0.001);
             return (
                 (current.TransmitBytes - previous.TransmitBytes) / seconds,
                 (current.ReceiveBytes - previous.ReceiveBytes) / seconds);
@@ -182,7 +183,7 @@ namespace SDMonitor
             ulong receive = 0;
             ulong transmit = 0;
 
-            foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
+            foreach (var networkInterface in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (networkInterface.OperationalStatus != OperationalStatus.Up ||
                     networkInterface.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel)
@@ -192,7 +193,7 @@ namespace SDMonitor
 
                 try
                 {
-                    IPv4InterfaceStatistics statistics = networkInterface.GetIPv4Statistics();
+                    var statistics = networkInterface.GetIPv4Statistics();
                     receive += ToUnsigned(statistics.BytesReceived);
                     transmit += ToUnsigned(statistics.BytesSent);
                 }
@@ -217,13 +218,13 @@ namespace SDMonitor
 
         private static DashboardMetric RateMetric(string metric, string title, double bytesPerSecond, ref double maxBytesPerSecond, RgbColor accent)
         {
-            double roundedBytesPerSecond = RoundRate(bytesPerSecond);
+            var roundedBytesPerSecond = RoundRate(bytesPerSecond);
             if (roundedBytesPerSecond > maxBytesPerSecond)
             {
                 maxBytesPerSecond = roundedBytesPerSecond;
             }
 
-            double percent = maxBytesPerSecond <= 0
+            var percent = maxBytesPerSecond <= 0
                 ? 0
                 : Math.Clamp(roundedBytesPerSecond / maxBytesPerSecond * 100, 0, 100);
 

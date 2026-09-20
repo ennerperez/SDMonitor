@@ -2,14 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using SDMonitor.Devices;
+using SDMonitor.Rendering;
 
-namespace SDMonitor
+namespace SDMonitor.Dashboard
 {
-    internal static class DashboardRunner
+    public static class DashboardRunner
     {
         public static void Run(MonitorMini deck, DashboardConfig config, int? frames)
         {
-            IHardwareSampler sampler = HardwareSampler.Create();
+            var sampler = HardwareSampler.Create();
             Console.WriteLine("Dashboard running.");
 
             using CancellationTokenSource cancellation = new();
@@ -25,35 +27,35 @@ namespace SDMonitor
                 return;
             }
 
-            byte[][] lastImages = new byte[MonitorMiniConstants.KeyCount][];
-            DateTimeOffset[] lastRendered = new DateTimeOffset[MonitorMiniConstants.KeyCount];
+            var lastImages = new byte[MonitorMiniConstants.KeyCount][];
+            var lastRendered = new DateTimeOffset[MonitorMiniConstants.KeyCount];
             try
             {
-                int renderedFrames = 0;
+                var renderedFrames = 0;
                 while (!cancellation.IsCancellationRequested)
                 {
-                    DateTimeOffset now = DateTimeOffset.UtcNow;
-                    DashboardMetric[] metrics = sampler.Sample();
-                    Dictionary<string, DashboardMetric> metricsByName = metrics.ToDictionary(
+                    var now = DateTimeOffset.UtcNow;
+                    var metrics = sampler.Sample();
+                    var metricsByName = metrics.ToDictionary(
                         metric => metric.Metric,
                         StringComparer.OrdinalIgnoreCase);
 
-                    foreach (DashboardTile tile in config.Tiles)
+                    foreach (var tile in config.Tiles)
                     {
-                        int key = tile.Position - 1;
+                        var key = tile.Position - 1;
                         if (lastRendered[key] != default &&
                             now - lastRendered[key] < TimeSpan.FromMilliseconds(tile.RefreshMilliseconds))
                         {
                             continue;
                         }
 
-                        if (!metricsByName.TryGetValue(tile.Metric, out DashboardMetric? metric))
+                        if (!metricsByName.TryGetValue(tile.Metric, out var metric))
                         {
                             continue;
                         }
 
-                        string title = string.IsNullOrWhiteSpace(tile.Title) ? metric.Title : tile.Title;
-                        byte[] image = KeyTileRenderer.RenderTile(title, metric.Value, metric.Percent, tile.StyleFor(metric.Percent));
+                        var title = string.IsNullOrWhiteSpace(tile.Title) ? metric.Title : tile.Title;
+                        var image = KeyTileRenderer.RenderTile(title, metric.Value, metric.Percent, tile.Style);
                         if (lastImages[key] is not null && image.AsSpan().SequenceEqual(lastImages[key]))
                         {
                             lastRendered[key] = now;
@@ -91,7 +93,7 @@ namespace SDMonitor
 
         public static void RunConsoleOnly(DashboardConfig config, int? frames)
         {
-            IHardwareSampler sampler = HardwareSampler.Create();
+            var sampler = HardwareSampler.Create();
             Console.WriteLine("Dashboard running without device.");
 
             using CancellationTokenSource cancellation = new();
@@ -107,11 +109,11 @@ namespace SDMonitor
                 return;
             }
 
-            int renderedFrames = 0;
+            var renderedFrames = 0;
             while (!cancellation.IsCancellationRequested)
             {
-                DashboardMetric[] metrics = sampler.Sample();
-                Dictionary<string, DashboardMetric> metricsByName = metrics.ToDictionary(
+                var metrics = sampler.Sample();
+                var metricsByName = metrics.ToDictionary(
                     metric => metric.Metric,
                     StringComparer.OrdinalIgnoreCase);
                 PrintConsole(config, metricsByName);
@@ -138,12 +140,12 @@ namespace SDMonitor
             Console.Write("\r");
             Console.Write(string.Join("  ", config.Tiles.Select(tile =>
             {
-                if (!metricsByName.TryGetValue(tile.Metric, out DashboardMetric? metric))
+                if (!metricsByName.TryGetValue(tile.Metric, out var metric))
                 {
                     return $"{tile.Title}:N/A";
                 }
 
-                string title = string.IsNullOrWhiteSpace(tile.Title) ? metric.Title : tile.Title;
+                var title = string.IsNullOrWhiteSpace(tile.Title) ? metric.Title : tile.Title;
                 return $"{title}:{metric.Value}";
             })).PadRight(80));
         }

@@ -1,17 +1,21 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using SDMonitor.Dashboard;
+using SDMonitor.Devices;
+using SDMonitor.Rendering;
 using Xunit;
 
-namespace SDMonitor.Tests
+namespace SDMonitor.UnitTests
 {
     public sealed class DashboardRunnerTests
     {
         [Fact]
         public void RunConsoleOnlyPrintsOneFrameAndStops()
         {
-            DashboardConfig config = OneTileConfig();
+            var config = OneTileConfig();
             using StringWriter output = new();
-            TextWriter originalOutput = Console.Out;
+            var originalOutput = Console.Out;
 
             try
             {
@@ -24,7 +28,7 @@ namespace SDMonitor.Tests
                 Console.SetOut(originalOutput);
             }
 
-            string text = output.ToString();
+            var text = output.ToString();
             Assert.Contains("Dashboard running without device.", text, StringComparison.Ordinal);
             Assert.Contains("Console dashboard stopped.", text, StringComparison.Ordinal);
             Assert.Contains("CPU:", text, StringComparison.Ordinal);
@@ -35,9 +39,9 @@ namespace SDMonitor.Tests
         {
             FakeTransport transport = new();
             using MonitorMini deck = new(transport);
-            DashboardConfig config = OneTileConfig();
+            var config = OneTileConfig();
             using StringWriter output = new();
-            TextWriter originalOutput = Console.Out;
+            var originalOutput = Console.Out;
 
             try
             {
@@ -50,7 +54,7 @@ namespace SDMonitor.Tests
                 Console.SetOut(originalOutput);
             }
 
-            string text = output.ToString();
+            var text = output.ToString();
             Assert.Contains("Dashboard running.", text, StringComparison.Ordinal);
             Assert.Contains("Dashboard stopped.", text, StringComparison.Ordinal);
             Assert.Contains("CPU:", text, StringComparison.Ordinal);
@@ -60,12 +64,12 @@ namespace SDMonitor.Tests
         private static DashboardConfig OneTileConfig()
         {
             DashboardTile tile = new(
-                "cpu",
-                "CPU",
-                1,
-                250,
+                (string)"cpu",
+                (string)"CPU",
+                (int)1,
+                (int)250,
                 TileRenderStyle.Default(new RgbColor(0, 200, 255)),
-                []);
+                (IReadOnlyList<DashboardThreshold>)[]);
 
             return new DashboardConfig([tile]);
         }

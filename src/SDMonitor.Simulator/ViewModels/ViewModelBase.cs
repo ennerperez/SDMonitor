@@ -2,26 +2,27 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace SDMonitor.Simulator.ViewModels;
-
-public abstract class ViewModelBase : INotifyPropertyChanged
+namespace SDMonitor.Simulator.ViewModels
 {
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    public abstract class ViewModelBase : INotifyPropertyChanged
     {
-        if (EqualityComparer<T>.Default.Equals(field, value))
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
-            return false;
+            if (EqualityComparer<T>.Default.Equals(field, value))
+            {
+                return false;
+            }
+
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
         }
 
-        field = value;
-        OnPropertyChanged(propertyName);
-        return true;
-    }
-
-    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

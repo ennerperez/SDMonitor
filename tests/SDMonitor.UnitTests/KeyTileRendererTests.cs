@@ -1,14 +1,16 @@
+using SDMonitor.Devices;
+using SDMonitor.Rendering;
 using Xunit;
 
-namespace SDMonitor.Tests
+namespace SDMonitor.UnitTests
 {
     public sealed class KeyTileRendererTests
     {
         [Fact]
         public void RenderTileReturnsMiniSizedBmpForPercentAndNoPercentTiles()
         {
-            byte[] percentTile = KeyTileRenderer.RenderTile("CPU", "55%", 55, new RgbColor(0, 200, 255));
-            byte[] noPercentTile = KeyTileRenderer.RenderTile("GPU?", "N/A", null, TileRenderStyle.Default(new RgbColor(170, 130, 255)));
+            var percentTile = KeyTileRenderer.RenderTile("CPU", "55%", 55, new RgbColor(0, 200, 255));
+            var noPercentTile = KeyTileRenderer.RenderTile("GPU?", "N/A", null, TileRenderStyle.Default(new RgbColor(170, 130, 255)));
 
             Assert.Equal((byte)'B', percentTile[0]);
             Assert.Equal((byte)'M', percentTile[1]);
@@ -33,8 +35,8 @@ namespace SDMonitor.Tests
                 new RgbColor(10, 11, 12),
                 new RgbColor(13, 14, 15));
 
-            byte[] low = KeyTileRenderer.RenderTile("long_title_123", "very-long-value", -10, style);
-            byte[] high = KeyTileRenderer.RenderTile("long_title_123", "very-long-value", 110, style);
+            var low = KeyTileRenderer.RenderTile("long_title_123", "very-long-value", -10, style);
+            var high = KeyTileRenderer.RenderTile("long_title_123", "very-long-value", 110, style);
 
             Assert.Equal(low.Length, high.Length);
             Assert.NotEqual(low, high);
@@ -43,7 +45,7 @@ namespace SDMonitor.Tests
         [Fact]
         public void RenderLabelTileReturnsMiniSizedBmp()
         {
-            byte[] tile = KeyTileRenderer.RenderLabelTile("down", new RgbColor(80, 170, 255));
+            var tile = KeyTileRenderer.RenderLabelTile("down", new RgbColor(80, 170, 255));
 
             Assert.Equal((byte)'B', tile[0]);
             Assert.Equal((byte)'M', tile[1]);

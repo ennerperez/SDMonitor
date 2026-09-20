@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using SDMonitor.Devices;
+using SDMonitor.Rendering;
 
-namespace SDMonitor
+namespace SDMonitor.Dashboard
 {
-    internal sealed class DashboardConfig
+    public class DashboardConfig
     {
-        public const string DefaultFileName = "dashboard-tiles.json";
+        public const string DefaultFileName = "preferences.json";
 
         private static readonly JsonSerializerOptions s_jsonOptions = new()
         {
@@ -30,20 +32,20 @@ namespace SDMonitor
 
         public int RefreshIntervalMilliseconds { get; }
 
-        public static DashboardConfig Load(string? path, int? refreshOverrideMilliseconds)
+        public static DashboardConfig Load(string path, int? refreshOverrideMilliseconds)
         {
             return Load(path, refreshOverrideMilliseconds, GetDefaultConfigDirectory());
         }
 
-        internal static DashboardConfig Load(string? path, int? refreshOverrideMilliseconds, string defaultConfigDirectory)
+        public static DashboardConfig Load(string path, int? refreshOverrideMilliseconds, string defaultConfigDirectory)
         {
-            DashboardTilesFile file = LoadFile(path, defaultConfigDirectory);
+            var file = LoadFile(path, defaultConfigDirectory);
             List<DashboardTile> tiles = new();
             HashSet<int> positions = new();
 
-            foreach (DashboardTileJson tile in file.Tiles)
+            foreach (var tile in file.Tiles)
             {
-                DashboardTile dashboardTile = tile.ToDashboardTile(refreshOverrideMilliseconds);
+                var dashboardTile = tile.ToDashboardTile(refreshOverrideMilliseconds);
                 if (!positions.Add(dashboardTile.Position))
                 {
                     throw new InvalidOperationException($"Duplicate dashboard tile position: {dashboardTile.Position}.");
@@ -55,9 +57,9 @@ namespace SDMonitor
             return new DashboardConfig(tiles.OrderBy(tile => tile.Position).ToArray());
         }
 
-        internal static string GetDefaultConfigDirectory()
+        public static string GetDefaultConfigDirectory()
         {
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             if (string.IsNullOrWhiteSpace(appData))
             {
                 appData = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -71,16 +73,16 @@ namespace SDMonitor
             return Path.Combine(appData, "SDMonitor");
         }
 
-        private static DashboardTilesFile LoadFile(string? path, string? defaultConfigDirectory = null)
+        private static DashboardTilesFile LoadFile(string path, string defaultConfigDirectory)
         {
-            string resolvedPath = ResolvePath(path, defaultConfigDirectory);
+            var resolvedPath = ResolvePath(path, defaultConfigDirectory);
             if (!File.Exists(resolvedPath))
             {
                 CreateDefaultFile(resolvedPath);
             }
 
-            string json = File.ReadAllText(resolvedPath);
-            DashboardTilesFile? file = JsonSerializer.Deserialize<DashboardTilesFile>(json, s_jsonOptions);
+            var json = File.ReadAllText(resolvedPath);
+            var file = JsonSerializer.Deserialize<DashboardTilesFile>(json, s_jsonOptions);
             if (file is null || file.Tiles.Count == 0)
             {
                 throw new InvalidOperationException($"Dashboard config '{resolvedPath}' must contain at least one tile.");
@@ -89,35 +91,30 @@ namespace SDMonitor
             return file;
         }
 
-        private static string ResolvePath(string? path, string? defaultConfigDirectory)
+        private static string ResolvePath(string path, string defaultConfigDirectory)
         {
-            if (!string.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(path))
             {
-                if (!File.Exists(path))
-                {
-                    throw new FileNotFoundException($"Dashboard config file not found: {path}", path);
-                }
-
-                return path;
+                return Path.Combine(defaultConfigDirectory ?? GetDefaultConfigDirectory(), DefaultFileName);
             }
 
-            return Path.Combine(defaultConfigDirectory ?? GetDefaultConfigDirectory(), DefaultFileName);
+            return !File.Exists(path) ? throw new FileNotFoundException($"Dashboard config file not found: {path}", path) : path;
         }
 
         private static void CreateDefaultFile(string path)
         {
-            string? directory = Path.GetDirectoryName(path);
+            var directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrWhiteSpace(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            string json = JsonSerializer.Serialize(DashboardTilesFile.Default(), s_jsonOptions);
+            var json = JsonSerializer.Serialize(DashboardTilesFile.Default(), s_jsonOptions);
             File.WriteAllText(path, json);
         }
     }
 
-    internal sealed record DashboardTile(
+    public record DashboardTile(
         string Metric,
         string Title,
         int Position,
@@ -132,44 +129,58 @@ namespace SDMonitor
                 return Style;
             }
 
-            DashboardThreshold? threshold = Thresholds.FirstOrDefault(value => value.Matches(percent.Value));
-            return threshold is null ? Style : threshold.Apply(Style);
+            foreach (var threshold in Thresholds)
+            {
+                if (threshold.Matches(percent.Value))
+                {
+                    return threshold.ApplyTo(Style);
+                }
+            }
+
+            return Style;
         }
     }
 
-    internal sealed record DashboardThreshold(
+    public record DashboardThreshold(
         double? MinPercent,
         double? MaxPercent,
         int? TitleSize,
         int? ValueSize,
         RgbColor? BorderColor,
+        RgbColor? ProgressColor,
         RgbColor? BackgroundColor,
-        RgbColor? FontColor,
+        int? ProgressBarHeightPercent,
+        int? MarginPercent,
+        int? PaddingPercent,
         RgbColor? TitleColor,
         RgbColor? ValueColor)
     {
         public bool Matches(double percent)
         {
-            return (!MinPercent.HasValue || percent >= MinPercent.Value) &&
-                (!MaxPercent.HasValue || percent <= MaxPercent.Value);
+            if (MinPercent.HasValue && percent < MinPercent.Value)
+            {
+                return false;
+            }
+
+            return !MaxPercent.HasValue || percent <= MaxPercent.Value;
         }
 
-        public TileRenderStyle Apply(TileRenderStyle style)
+        public TileRenderStyle ApplyTo(TileRenderStyle style) => style with
         {
-            RgbColor? fontColor = FontColor;
-            return style with
-            {
-                TitleSize = TitleSize ?? style.TitleSize,
-                ValueSize = ValueSize ?? style.ValueSize,
-                BorderColor = BorderColor ?? style.BorderColor,
-                BackgroundColor = BackgroundColor ?? style.BackgroundColor,
-                TitleColor = TitleColor ?? fontColor ?? style.TitleColor,
-                ValueColor = ValueColor ?? fontColor ?? style.ValueColor
-            };
-        }
+            TitleSize = TitleSize ?? style.TitleSize,
+            ValueSize = ValueSize ?? style.ValueSize,
+            BorderColor = BorderColor ?? style.BorderColor,
+            ProgressColor = ProgressColor ?? style.ProgressColor,
+            BackgroundColor = BackgroundColor ?? style.BackgroundColor,
+            ProgressBarHeightPercent = ProgressBarHeightPercent ?? style.ProgressBarHeightPercent,
+            MarginPercent = MarginPercent ?? style.MarginPercent,
+            PaddingPercent = PaddingPercent ?? style.PaddingPercent,
+            TitleColor = TitleColor ?? style.TitleColor,
+            ValueColor = ValueColor ?? style.ValueColor
+        };
     }
 
-    internal sealed class DashboardTilesFile
+    public class DashboardTilesFile
     {
         public List<DashboardTileJson> Tiles { get; init; } = [];
 
@@ -187,7 +198,7 @@ namespace SDMonitor
         };
     }
 
-    internal sealed class DashboardTileJson
+    public sealed class DashboardTileJson
     {
         private static readonly HashSet<string> s_metrics = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -244,7 +255,7 @@ namespace SDMonitor
 
         public DashboardTile ToDashboardTile(int? refreshOverrideMilliseconds)
         {
-            string normalizedMetric = Metric.Trim().ToLowerInvariant();
+            var normalizedMetric = Metric.Trim().ToLowerInvariant();
             if (!s_metrics.Contains(normalizedMetric))
             {
                 throw new InvalidOperationException($"Invalid dashboard tile metric: {Metric}.");
@@ -255,10 +266,10 @@ namespace SDMonitor
                 throw new InvalidOperationException($"Unsupported dashboard tile font: {Font}.");
             }
 
-            int position = RequireRange(nameof(Position), Position, 1, MonitorMiniConstants.KeyCount);
-            int titleSize = RequireRange(nameof(TitleSize), TitleSize, 1, 4);
-            int valueSize = RequireRange(nameof(ValueSize), ValueSize, 1, 5);
-            int refreshMilliseconds = refreshOverrideMilliseconds ?? RequireRange(nameof(RefreshMilliseconds), RefreshMilliseconds, 250, 60000);
+            var position = RequireRange(nameof(Position), Position, 1, MonitorMiniConstants.KeyCount);
+            var titleSize = RequireRange(nameof(TitleSize), TitleSize, 1, 4);
+            var valueSize = RequireRange(nameof(ValueSize), ValueSize, 1, 5);
+            var refreshMilliseconds = refreshOverrideMilliseconds ?? RequireRange(nameof(RefreshMilliseconds), RefreshMilliseconds, 250, 60000);
             TileRenderStyle style = new(
                 Font,
                 titleSize,
@@ -271,14 +282,15 @@ namespace SDMonitor
                 RequireRange(nameof(PaddingPercent), PaddingPercent, 0, 30),
                 ParseColor(TitleColor),
                 ParseColor(ValueColor));
-            IReadOnlyList<DashboardThreshold> thresholds = ThresholdsEnabled
+
+            var thresholds = ThresholdsEnabled
                 ? Thresholds.Select(threshold => threshold.ToDashboardThreshold()).ToArray()
                 : [];
 
             return new DashboardTile(normalizedMetric, Title.Trim(), position, refreshMilliseconds, style, thresholds);
         }
 
-        internal static int RequireRange(string name, int value, int min, int max)
+        public static int RequireRange(string name, int value, int min, int max)
         {
             if (value < min || value > max)
             {
@@ -288,27 +300,37 @@ namespace SDMonitor
             return value;
         }
 
-        internal static RgbColor ParseColor(string value)
+        public static int? RequireOptionalRange(string name, int? value, int min, int max)
         {
-            string color = value.Trim();
+            return value.HasValue ? RequireRange(name, value.Value, min, max) : null;
+        }
+
+        public static RgbColor ParseColor(string value)
+        {
+            var color = value.Trim();
             if (color.StartsWith('#'))
             {
                 color = color[1..];
             }
 
             if (color.Length != 6 ||
-                !byte.TryParse(color[..2], System.Globalization.NumberStyles.HexNumber, null, out byte red) ||
-                !byte.TryParse(color.AsSpan(2, 2), System.Globalization.NumberStyles.HexNumber, null, out byte green) ||
-                !byte.TryParse(color.AsSpan(4, 2), System.Globalization.NumberStyles.HexNumber, null, out byte blue))
+                !byte.TryParse(color[..2], System.Globalization.NumberStyles.HexNumber, null, out var red) ||
+                !byte.TryParse(color.AsSpan(2, 2), System.Globalization.NumberStyles.HexNumber, null, out var green) ||
+                !byte.TryParse(color.AsSpan(4, 2), System.Globalization.NumberStyles.HexNumber, null, out var blue))
             {
                 throw new InvalidOperationException($"Invalid RGB color: {value}.");
             }
 
             return new RgbColor(red, green, blue);
         }
+
+        public static RgbColor? ParseOptionalColor(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : ParseColor(value);
+        }
     }
 
-    internal sealed class DashboardThresholdJson
+    public class DashboardThresholdJson
     {
         public double? MinPercent { get; init; }
 
@@ -318,65 +340,58 @@ namespace SDMonitor
 
         public int? ValueSize { get; init; }
 
-        public string? BorderColor { get; init; }
+        public string BorderColor { get; init; }
 
-        public string? BackgroundColor { get; init; }
+        public string ProgressColor { get; init; }
 
-        public string? FontColor { get; init; }
+        public string BackgroundColor { get; init; }
 
-        public string? TitleColor { get; init; }
+        public int? ProgressBarHeightPercent { get; init; }
 
-        public string? ValueColor { get; init; }
+        public int? MarginPercent { get; init; }
+
+        public int? PaddingPercent { get; init; }
+
+        public string FontColor { get; init; }
+
+        public string TitleColor { get; init; }
+
+        public string ValueColor { get; init; }
 
         public DashboardThreshold ToDashboardThreshold()
         {
-            double? minPercent = RequirePercent(nameof(MinPercent), MinPercent);
-            double? maxPercent = RequirePercent(nameof(MaxPercent), MaxPercent);
-            if (!minPercent.HasValue && !maxPercent.HasValue)
+            switch (MinPercent)
             {
-                throw new InvalidOperationException("Dashboard tile threshold must define MinPercent or MaxPercent.");
+                case null when !MaxPercent.HasValue:
+                    throw new InvalidOperationException("Dashboard threshold must define minPercent or maxPercent.");
+                case < 0 or > 100:
+                    throw new InvalidOperationException($"Invalid dashboard threshold {nameof(MinPercent)}: {MinPercent}. Expected number from 0 to 100.");
             }
 
-            if (minPercent.HasValue && maxPercent.HasValue && minPercent.Value > maxPercent.Value)
+            if (MaxPercent is < 0 or > 100)
             {
-                throw new InvalidOperationException("Dashboard tile threshold MinPercent cannot be greater than MaxPercent.");
+                throw new InvalidOperationException($"Invalid dashboard threshold {nameof(MaxPercent)}: {MaxPercent}. Expected number from 0 to 100.");
             }
 
+            if (MinPercent.HasValue && MaxPercent.HasValue && MinPercent.Value > MaxPercent.Value)
+            {
+                throw new InvalidOperationException("Dashboard threshold minPercent cannot be greater than maxPercent.");
+            }
+
+            var fontColor = DashboardTileJson.ParseOptionalColor(FontColor);
             return new DashboardThreshold(
-                minPercent,
-                maxPercent,
-                RequireRange(nameof(TitleSize), TitleSize, 1, 4),
-                RequireRange(nameof(ValueSize), ValueSize, 1, 5),
-                ParseOptionalColor(BorderColor),
-                ParseOptionalColor(BackgroundColor),
-                ParseOptionalColor(FontColor),
-                ParseOptionalColor(TitleColor),
-                ParseOptionalColor(ValueColor));
-        }
-
-        private static double? RequirePercent(string name, double? value)
-        {
-            if (!value.HasValue)
-            {
-                return null;
-            }
-
-            if (value.Value < 0 || value.Value > 100)
-            {
-                throw new InvalidOperationException($"Invalid dashboard tile threshold {name}: {value.Value}. Expected number from 0 to 100.");
-            }
-
-            return value.Value;
-        }
-
-        private static int? RequireRange(string name, int? value, int min, int max)
-        {
-            return value.HasValue ? DashboardTileJson.RequireRange(name, value.Value, min, max) : null;
-        }
-
-        private static RgbColor? ParseOptionalColor(string? value)
-        {
-            return string.IsNullOrWhiteSpace(value) ? null : DashboardTileJson.ParseColor(value);
+                MinPercent,
+                MaxPercent,
+                DashboardTileJson.RequireOptionalRange(nameof(TitleSize), TitleSize, 1, 4),
+                DashboardTileJson.RequireOptionalRange(nameof(ValueSize), ValueSize, 1, 5),
+                DashboardTileJson.ParseOptionalColor(BorderColor),
+                DashboardTileJson.ParseOptionalColor(ProgressColor),
+                DashboardTileJson.ParseOptionalColor(BackgroundColor),
+                DashboardTileJson.RequireOptionalRange(nameof(ProgressBarHeightPercent), ProgressBarHeightPercent, 1, 50),
+                DashboardTileJson.RequireOptionalRange(nameof(MarginPercent), MarginPercent, 0, 30),
+                DashboardTileJson.RequireOptionalRange(nameof(PaddingPercent), PaddingPercent, 0, 30),
+                DashboardTileJson.ParseOptionalColor(TitleColor) ?? fontColor,
+                DashboardTileJson.ParseOptionalColor(ValueColor) ?? fontColor);
         }
     }
 }

@@ -2,8 +2,10 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Text;
+using SDMonitor.Devices;
+using SDMonitor.Rendering;
 
-namespace SDMonitor
+namespace SDMonitor.Protocol
 {
     public static class MiniProtocol
     {
@@ -14,7 +16,7 @@ namespace SDMonitor
                 throw new ArgumentOutOfRangeException(nameof(percent), percent, "Brightness must be between 0 and 100.");
             }
 
-            byte[] report = NewFeatureReport(0x05, 0x55);
+            var report = NewFeatureReport(0x05, 0x55);
             report[0x02] = 0xAA;
             report[0x03] = 0xD1;
             report[0x04] = 0x01;
@@ -24,7 +26,7 @@ namespace SDMonitor
 
         public static byte[] ShowLogoReport()
         {
-            byte[] report = NewFeatureReport(0x0B, 0x63);
+            var report = NewFeatureReport(0x0B, 0x63);
             report[0x02] = 0x00;
             return report;
         }
@@ -41,7 +43,7 @@ namespace SDMonitor
                 throw new ArgumentOutOfRangeException(nameof(duration), duration, "Sleep duration is too large.");
             }
 
-            byte[] report = NewFeatureReport(0x0B, 0xA2);
+            var report = NewFeatureReport(0x0B, 0xA2);
             BinaryPrimitives.WriteInt32LittleEndian(report.AsSpan(0x02, sizeof(int)), (int)duration.TotalSeconds);
             return report;
         }
@@ -63,8 +65,8 @@ namespace SDMonitor
 
         public static string ReadAsciiReportString(ReadOnlySpan<byte> report, int offset)
         {
-            int length = report[offset..].IndexOf((byte)0x00);
-            ReadOnlySpan<byte> value = length >= 0 ? report.Slice(offset, length) : report[offset..];
+            var length = report[offset..].IndexOf((byte)0x00);
+            var value = length >= 0 ? report.Slice(offset, length) : report[offset..];
             return Encoding.ASCII.GetString(value).Trim();
         }
 
@@ -80,8 +82,8 @@ namespace SDMonitor
                 throw new ArgumentException("Input report ID must be 0x01.", nameof(inputReport));
             }
 
-            MiniKeyState[] states = new MiniKeyState[MonitorMiniConstants.KeyCount];
-            for (int key = 0; key < states.Length; key++)
+            var states = new MiniKeyState[MonitorMiniConstants.KeyCount];
+            for (var key = 0; key < states.Length; key++)
             {
                 states[key] = new MiniKeyState(key, inputReport[key + 1] != 0x00);
             }
@@ -91,7 +93,7 @@ namespace SDMonitor
 
         public static byte[] SolidBmpKeyImage(byte red, byte green, byte blue)
         {
-            RgbColor[] pixels = new RgbColor[MonitorMiniConstants.KeyImageWidth * MonitorMiniConstants.KeyImageHeight];
+            var pixels = new RgbColor[MonitorMiniConstants.KeyImageWidth * MonitorMiniConstants.KeyImageHeight];
             Array.Fill(pixels, new RgbColor(red, green, blue));
             return BmpFromPixels(pixels, MonitorMiniConstants.KeyImageWidth, MonitorMiniConstants.KeyImageHeight);
         }
@@ -115,10 +117,10 @@ namespace SDMonitor
 
             const int bytesPerPixel = 3;
             const int headerLength = 54;
-            int rowStride = width * bytesPerPixel;
-            int paddedRowStride = (rowStride + 3) & ~3;
-            int pixelDataLength = paddedRowStride * height;
-            byte[] bmp = new byte[headerLength + pixelDataLength];
+            var rowStride = width * bytesPerPixel;
+            var paddedRowStride = (rowStride + 3) & ~3;
+            var pixelDataLength = paddedRowStride * height;
+            var bmp = new byte[headerLength + pixelDataLength];
 
             bmp[0] = (byte)'B';
             bmp[1] = (byte)'M';
@@ -131,12 +133,12 @@ namespace SDMonitor
             BinaryPrimitives.WriteInt16LittleEndian(bmp.AsSpan(0x1C, 2), 24);
             BinaryPrimitives.WriteInt32LittleEndian(bmp.AsSpan(0x22, 4), pixelDataLength);
 
-            for (int y = 0; y < height; y++)
+            for (var y = 0; y < height; y++)
             {
-                for (int x = 0; x < width; x++)
+                for (var x = 0; x < width; x++)
                 {
-                    RgbColor pixel = pixels[y * width + x];
-                    int offset = headerLength + y * paddedRowStride + x * bytesPerPixel;
+                    var pixel = pixels[y * width + x];
+                    var offset = headerLength + y * paddedRowStride + x * bytesPerPixel;
                     bmp[offset + 0] = pixel.Blue;
                     bmp[offset + 1] = pixel.Green;
                     bmp[offset + 2] = pixel.Red;
@@ -158,13 +160,13 @@ namespace SDMonitor
                 throw new ArgumentException("BMP image data cannot be empty.", nameof(bmpBytes));
             }
 
-            int chunkCount = (bmpBytes.Length + MonitorMiniConstants.ImageChunkPayloadLength - 1) /
+            var chunkCount = (bmpBytes.Length + MonitorMiniConstants.ImageChunkPayloadLength - 1) /
                              MonitorMiniConstants.ImageChunkPayloadLength;
-            byte[][] reports = new byte[chunkCount][];
+            var reports = new byte[chunkCount][];
 
-            for (int index = 0; index < reports.Length; index++)
+            for (var index = 0; index < reports.Length; index++)
             {
-                byte[] report = new byte[MonitorMiniConstants.OutputReportLength];
+                var report = new byte[MonitorMiniConstants.OutputReportLength];
                 report[0x00] = 0x02;
                 report[0x01] = 0x01;
                 report[0x02] = checked((byte)index);
@@ -172,8 +174,8 @@ namespace SDMonitor
                 report[0x04] = showImage ? (byte)0x01 : (byte)0x00;
                 report[0x05] = checked((byte)(keyIndex + 1));
 
-                int sourceOffset = index * MonitorMiniConstants.ImageChunkPayloadLength;
-                int sourceLength = Math.Min(MonitorMiniConstants.ImageChunkPayloadLength, bmpBytes.Length - sourceOffset);
+                var sourceOffset = index * MonitorMiniConstants.ImageChunkPayloadLength;
+                var sourceLength = Math.Min(MonitorMiniConstants.ImageChunkPayloadLength, bmpBytes.Length - sourceOffset);
                 bmpBytes.Slice(sourceOffset, sourceLength).CopyTo(report.AsSpan(MonitorMiniConstants.ImagePayloadOffset));
                 reports[index] = report;
             }
@@ -183,7 +185,7 @@ namespace SDMonitor
 
         private static byte[] NewFeatureReport(byte reportId, byte command = 0x00)
         {
-            byte[] report = new byte[MonitorMiniConstants.FeatureReportLength];
+            var report = new byte[MonitorMiniConstants.FeatureReportLength];
             report[0] = reportId;
             report[1] = command;
             return report;

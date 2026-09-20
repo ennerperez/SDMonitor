@@ -1,20 +1,21 @@
 using Avalonia;
 
-namespace SDMonitor.Simulator;
-
-internal static class Program
+namespace SDMonitor.Simulator
 {
-    public static void Main(string[] args)
+    public static class Program
     {
-        BuildAvaloniaApp()
-            .StartWithClassicDesktopLifetime(args);
-    }
+        public static void Main(string[] args)
+        {
+            BuildAvaloniaApp()
+                .StartWithClassicDesktopLifetime(args);
+        }
 
-    public static AppBuilder BuildAvaloniaApp()
-    {
-        return AppBuilder.Configure<App>()
-            .UsePlatformDetect()
-            .WithInterFont()
-            .LogToTrace();
+        public static AppBuilder BuildAvaloniaApp()
+        {
+            return AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .WithInterFont()
+                .LogToTrace();
+        }
     }
 }

@@ -10,9 +10,9 @@ GitHub Release:
 
 - Windows x64: `sdmonitor-<version>-win-x64.exe`
 - Linux x64: `sdmonitor-<version>-linux-x64`
-- macOS Apple Silicon: `sdmonitor-<version>-osx-arm64`
+- Osx Apple Silicon: `sdmonitor-<version>-osx-arm64`
 
-Linux/macOS quick install:
+Linux/Osx quick install:
 
 ```bash
 chmod +x sdmonitor-<version>-linux-x64
@@ -46,7 +46,7 @@ GitVersion.
 ## Commands
 
 Running `sdmonitor` without arguments starts the dashboard and loads
-`dashboard-tiles.json` from the per-user SDMonitor config directory. If the file
+`preferences.json` from the per-user SDMonitor config directory. If the file
 does not exist, SDMonitor creates it with default tiles before loading it. If the
 Stream Deck HID handle is unavailable, SDMonitor keeps running as a console
 dashboard instead of exiting.
@@ -64,9 +64,9 @@ sdmonitor dashboard [config-path|interval-ms] [frames]
 sdmonitor layout-test
 ```
 
-Dashboard tile appearance is configured in `dashboard-tiles.json` under the
+Dashboard tile appearance is configured in `preferences.json` under the
 per-user config directory: `~/.config/SDMonitor` on Linux,
-`~/Library/Application Support/SDMonitor` on macOS, and
+`~/Library/Application Support/SDMonitor` on Osx, and
 `%APPDATA%\SDMonitor` on Windows. Each tile selects a `metric`, `position`,
 `title`, colors, text sizes, spacing, bottom progress bar height, `refreshMilliseconds`, and optional `thresholds`. Threshold
 styles are enabled per tile with `thresholdsEnabled`; matching thresholds can

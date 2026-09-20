@@ -1,8 +1,8 @@
 using System;
 
-namespace SDMonitor
+namespace SDMonitor.Dashboard
 {
-    internal static class HardwareSampler
+    public static class HardwareSampler
     {
         public static IHardwareSampler Create()
         {
@@ -13,7 +13,7 @@ namespace SDMonitor
 
             if (OperatingSystem.IsMacOS())
             {
-                return new MacOSHardwareSampler();
+                return new OsxHardwareSampler();
             }
 
             return new LinuxHardwareSampler();

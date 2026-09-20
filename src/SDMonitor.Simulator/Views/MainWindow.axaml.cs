@@ -1,17 +1,18 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
-namespace SDMonitor.Simulator.Views;
-
-public sealed partial class MainWindow : Window
+namespace SDMonitor.Simulator.Views
 {
-    public MainWindow()
+    public sealed partial class MainWindow : Window
     {
-        InitializeComponent();
-    }
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
 
-    private void InitializeComponent()
-    {
-        AvaloniaXamlLoader.Load(this);
+        private void InitializeComponent()
+        {
+            AvaloniaXamlLoader.Load(this);
+        }
     }
 }

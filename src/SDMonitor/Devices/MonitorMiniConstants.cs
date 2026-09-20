@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace SDMonitor
+namespace SDMonitor.Devices
 {
     [ExcludeFromCodeCoverage]
     public static class MonitorMiniConstants
