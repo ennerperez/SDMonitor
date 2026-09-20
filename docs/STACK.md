@@ -24,7 +24,7 @@
 ## Dashboard Notes
 
 - CLI command: `dashboard [config-path|interval-ms] [frames]`.
-- Running the CLI without arguments starts `dashboard` and loads `dashboard-tiles.json` from the current directory or executable directory when present.
+- Running the CLI without arguments starts `dashboard` and loads `dashboard-tiles.json` from the per-user SDMonitor config directory, creating it with defaults when missing.
 - If the Stream Deck HID handle cannot be opened, dashboard mode falls back to console output.
 - Dashboard tiles are configured through external JSON with `metric`, `font`, title/value sizes, title, border color, progress color, background color, progress bar height percent, margin/padding percent, refresh interval, text colors, and deck position.
 - Dashboard maps configured metrics to CPU, RAM, GPU, root disk, network upload, and network download.
