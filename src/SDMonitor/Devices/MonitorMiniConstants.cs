@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SDMonitor
 {
+    [ExcludeFromCodeCoverage]
     public static class MonitorMiniConstants
     {
         public const int VendorId = 0x0FD9;

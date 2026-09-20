@@ -69,6 +69,17 @@ namespace SDMonitor.Tests
         }
 
         [Fact]
+        public void DefaultTilesFileCreatesExpectedTiles()
+        {
+            DashboardTilesFile file = DashboardTilesFile.Default();
+
+            Assert.Equal(MonitorMiniConstants.KeyCount, file.Tiles.Count);
+            Assert.Equal(["cpu", "ram", "gpu", "disk", "upload", "download"], file.Tiles.ConvertAll(tile => tile.Metric));
+            Assert.Equal([1, 2, 3, 4, 5, 6], file.Tiles.ConvertAll(tile => tile.Position));
+            Assert.All(file.Tiles, tile => Assert.Equal(tile.BorderColor, tile.ProgressColor));
+        }
+
+        [Fact]
         public void LoadRejectsMissingEmptyAndDuplicatePositionFiles()
         {
             Assert.Throws<FileNotFoundException>(() => DashboardConfig.Load(Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"), null));
