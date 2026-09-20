@@ -11,4 +11,14 @@
     <PackageReference Include="HidSharp" Version="2.6.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="SDMonitor.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="dashboard-tiles.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

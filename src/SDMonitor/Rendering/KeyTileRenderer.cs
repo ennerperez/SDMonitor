@@ -57,21 +57,48 @@ namespace SDMonitor
 
         public static byte[] RenderTile(string title, string value, double? percent, RgbColor accent)
         {
+            return RenderTile(title, value, percent, TileRenderStyle.Default(accent));
+        }
+
+        internal static byte[] RenderTile(string title, string value, double? percent, TileRenderStyle style)
+        {
             RgbColor[] pixels = new RgbColor[Width * Height];
-            Fill(pixels, new RgbColor(8, 10, 14));
-            DrawBorder(pixels, accent);
+            Fill(pixels, style.BackgroundColor);
 
-            DrawTextCentered(pixels, title.ToUpperInvariant(), y: 8, scale: 1, new RgbColor(170, 180, 190));
-            DrawTextCentered(pixels, value.ToUpperInvariant(), y: 27, scale: 2, new RgbColor(245, 248, 250));
+            int margin = PercentToPixels(style.MarginPercent);
+            int padding = PercentToPixels(style.PaddingPercent);
+            int inset = margin + padding;
+            int borderSize = Math.Max(1, Width - (margin * 2));
+            DrawBorder(pixels, margin, margin, borderSize, borderSize, style.BorderColor);
 
-            DrawBarTrack(pixels, x: 10, y: 66, width: 60, height: 6);
+            int contentX = Math.Clamp(inset, 0, Width - 1);
+            int contentWidth = Math.Max(1, Width - (contentX * 2));
+            int titleY = Math.Clamp(margin + padding + 4, 0, Height - 1);
+            int barHeight = Math.Max(1, PercentToPixels(style.ProgressBarHeightPercent));
+            int barY = Math.Clamp(Height - inset - barHeight, 0, Height - barHeight);
+            int barWidth = Math.Max(1, Width - (contentX * 2));
+
+            DrawTextCentered(pixels, title.ToUpperInvariant(), contentX, contentWidth, titleY, style.TitleSize, style.TitleColor);
+
+            int valueHeight = 7 * style.ValueSize;
+            int titleBottom = titleY + (7 * style.TitleSize);
+            int minValueY = titleBottom + Math.Max(2, padding / 2);
+            int maxValueY = Math.Max(0, barY - valueHeight - Math.Max(2, padding / 2));
+            int idealValueY = Math.Max(0, (barY - valueHeight) / 2);
+            int valueY = maxValueY >= minValueY
+                ? Math.Clamp(idealValueY, minValueY, maxValueY)
+                : Math.Max(0, Math.Min(minValueY, Height - valueHeight));
+
+            DrawTextCentered(pixels, value.ToUpperInvariant(), contentX, contentWidth, valueY, style.ValueSize, style.ValueColor);
+
+            DrawBarTrack(pixels, contentX, barY, barWidth, barHeight);
             if (!percent.HasValue)
             {
                 return MiniProtocol.BmpFromPixels(RotateCounterClockwise(pixels), Width, Height);
             }
 
-            int fillWidth = (int)Math.Round(Math.Clamp(percent.Value, 0, 100) / 100.0 * 60);
-            FillRect(pixels, 10, 66, fillWidth, 6, accent);
+            int fillWidth = (int)Math.Round(Math.Clamp(percent.Value, 0, 100) / 100.0 * barWidth);
+            FillRect(pixels, contentX, barY, fillWidth, barHeight, style.ProgressColor);
 
             return MiniProtocol.BmpFromPixels(RotateCounterClockwise(pixels), Width, Height);
         }
@@ -80,7 +107,7 @@ namespace SDMonitor
         {
             RgbColor[] pixels = new RgbColor[Width * Height];
             Fill(pixels, new RgbColor(8, 10, 14));
-            DrawBorder(pixels, accent);
+            DrawBorder(pixels, 0, 0, Width, Height, accent);
             DrawTextCentered(pixels, label.ToUpperInvariant(), y: 30, scale: 2, new RgbColor(245, 248, 250));
             return MiniProtocol.BmpFromPixels(RotateCounterClockwise(pixels), Width, Height);
         }
@@ -90,16 +117,21 @@ namespace SDMonitor
             Array.Fill(pixels, color);
         }
 
-        private static void DrawBorder(RgbColor[] pixels, RgbColor color)
+        private static void DrawBorder(RgbColor[] pixels, int x, int y, int width, int height, RgbColor color)
         {
-            FillRect(pixels, 0, 0, Width, 2, color);
-            FillRect(pixels, 0, Height - 2, Width, 2, color);
-            FillRect(pixels, 0, 0, 2, Height, color);
-            FillRect(pixels, Width - 2, 0, 2, Height, color);
+            FillRect(pixels, x, y, width, 2, color);
+            FillRect(pixels, x, y + height - 2, width, 2, color);
+            FillRect(pixels, x, y, 2, height, color);
+            FillRect(pixels, x + width - 2, y, 2, height, color);
         }
 
         private static void DrawBarTrack(RgbColor[] pixels, int x, int y, int width, int height)
         {
+            if (width <= 0 || height <= 0)
+            {
+                return;
+            }
+
             FillRect(pixels, x, y, width, height, new RgbColor(35, 40, 48));
             SetPixel(pixels, x - 1, y - 1, new RgbColor(85, 90, 100));
             SetPixel(pixels, x + width, y - 1, new RgbColor(85, 90, 100));
@@ -109,15 +141,20 @@ namespace SDMonitor
 
         private static void DrawTextCentered(RgbColor[] pixels, string text, int y, int scale, RgbColor color)
         {
-            string fitted = FitText(text, scale);
-            int width = TextWidth(fitted, scale);
-            DrawText(pixels, fitted, Math.Max(0, (Width - width) / 2), y, scale, color);
+            DrawTextCentered(pixels, text, 0, Width, y, scale, color);
         }
 
-        private static string FitText(string text, int scale)
+        private static void DrawTextCentered(RgbColor[] pixels, string text, int x, int areaWidth, int y, int scale, RgbColor color)
+        {
+            string fitted = FitText(text, scale, areaWidth);
+            int textWidth = TextWidth(fitted, scale);
+            DrawText(pixels, fitted, x + Math.Max(0, (areaWidth - textWidth) / 2), y, scale, color);
+        }
+
+        private static string FitText(string text, int scale, int maxWidth)
         {
             string normalized = new(text.Select(character => s_font.ContainsKey(character) ? character : ' ').ToArray());
-            while (normalized.Length > 0 && TextWidth(normalized, scale) > Width - 8)
+            while (normalized.Length > 0 && TextWidth(normalized, scale) > maxWidth)
             {
                 normalized = normalized[..^1];
             }
@@ -165,6 +202,11 @@ namespace SDMonitor
 
         private static void FillRect(RgbColor[] pixels, int x, int y, int width, int height, RgbColor color)
         {
+            if (width <= 0 || height <= 0)
+            {
+                return;
+            }
+
             for (int row = 0; row < height; row++)
             {
                 for (int col = 0; col < width; col++)
@@ -199,5 +241,37 @@ namespace SDMonitor
 
             return rotated;
         }
+
+        private static int PercentToPixels(int percent)
+        {
+            return (int)Math.Round(Math.Clamp(percent, 0, 100) / 100.0 * Height);
+        }
+    }
+
+    internal sealed record TileRenderStyle(
+        string Font,
+        int TitleSize,
+        int ValueSize,
+        RgbColor BorderColor,
+        RgbColor ProgressColor,
+        RgbColor BackgroundColor,
+        int ProgressBarHeightPercent,
+        int MarginPercent,
+        int PaddingPercent,
+        RgbColor TitleColor,
+        RgbColor ValueColor)
+    {
+        public static TileRenderStyle Default(RgbColor accent) => new(
+            "5x7",
+            1,
+            2,
+            accent,
+            accent,
+            new RgbColor(8, 10, 14),
+            8,
+            0,
+            10,
+            new RgbColor(170, 180, 190),
+            new RgbColor(245, 248, 250));
     }
 }

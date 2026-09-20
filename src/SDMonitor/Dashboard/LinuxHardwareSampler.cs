@@ -23,12 +23,12 @@ namespace SDMonitor
 
             return
             [
-                PercentMetric("CPU", cpuPercent, new RgbColor(0, 200, 255)),
-                PercentMetric("RAM", ramPercent, new RgbColor(120, 220, 80)),
-                PercentMetric("GPU", gpuPercent, new RgbColor(170, 130, 255)),
-                PercentMetric("HDD", diskPercent, new RgbColor(255, 190, 70)),
-                RateMetric("UP", uploadBytesPerSecond, ref _maxUploadBytesPerSecond, new RgbColor(255, 100, 100)),
-                RateMetric("DOWN", downloadBytesPerSecond, ref _maxDownloadBytesPerSecond, new RgbColor(80, 170, 255))
+                PercentMetric("cpu", "CPU", cpuPercent, new RgbColor(0, 200, 255)),
+                PercentMetric("ram", "RAM", ramPercent, new RgbColor(120, 220, 80)),
+                PercentMetric("gpu", "GPU", gpuPercent, new RgbColor(170, 130, 255)),
+                PercentMetric("disk", "HDD", diskPercent, new RgbColor(255, 190, 70)),
+                RateMetric("upload", "UP", uploadBytesPerSecond, ref _maxUploadBytesPerSecond, new RgbColor(255, 100, 100)),
+                RateMetric("download", "DOWN", downloadBytesPerSecond, ref _maxDownloadBytesPerSecond, new RgbColor(80, 170, 255))
             ];
         }
 
@@ -215,13 +215,13 @@ namespace SDMonitor
             return new NetworkSample(DateTimeOffset.UtcNow, receive, transmit);
         }
 
-        private static DashboardMetric PercentMetric(string title, double? percent, RgbColor accent)
+        private static DashboardMetric PercentMetric(string metric, string title, double? percent, RgbColor accent)
         {
             double? rounded = percent.HasValue ? Math.Round(percent.Value / 5, MidpointRounding.AwayFromZero) * 5 : null;
-            return new DashboardMetric(title, FormatPercent(rounded), rounded, accent);
+            return new DashboardMetric(metric, title, FormatPercent(rounded), rounded, accent);
         }
 
-        private static DashboardMetric RateMetric(string title, double bytesPerSecond, ref double maxBytesPerSecond, RgbColor accent)
+        private static DashboardMetric RateMetric(string metric, string title, double bytesPerSecond, ref double maxBytesPerSecond, RgbColor accent)
         {
             double roundedBytesPerSecond = RoundRate(bytesPerSecond);
             if (roundedBytesPerSecond > maxBytesPerSecond)
@@ -233,7 +233,7 @@ namespace SDMonitor
                 ? 0
                 : Math.Clamp(roundedBytesPerSecond / maxBytesPerSecond * 100, 0, 100);
 
-            return new DashboardMetric(title, FormatRate(roundedBytesPerSecond), percent, accent);
+            return new DashboardMetric(metric, title, FormatRate(roundedBytesPerSecond), percent, accent);
         }
 
         private static double RoundRate(double bytesPerSecond)

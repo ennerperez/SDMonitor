@@ -131,35 +131,59 @@ static void Watch(MonitorMini deck)
 
 static void RunDashboard(string[] args)
 {
-    int intervalMilliseconds = args.Length > 1
-        ? ParseInt(args, 1, "interval-ms", 250, 60000)
-        : 1500;
-    int? frames = args.Length > 2
-        ? ParseInt(args, 2, "frames", 1, int.MaxValue)
-        : null;
+    (string? configPath, int? refreshOverrideMilliseconds, int? frames) = ParseDashboardArguments(args);
+    DashboardConfig config = DashboardConfig.Load(configPath, refreshOverrideMilliseconds);
 
     try
     {
         using MonitorMini deck = MonitorMini.OpenFirst();
-        DashboardRunner.Run(deck, intervalMilliseconds, frames);
+        DashboardRunner.Run(deck, config, frames);
     }
     catch (InvalidOperationException ex)
     {
         Console.Error.WriteLine($"Device unavailable: {ex.Message}");
-        DashboardRunner.RunConsoleOnly(intervalMilliseconds, frames);
+        DashboardRunner.RunConsoleOnly(config, frames);
     }
+}
+
+static (string? ConfigPath, int? RefreshOverrideMilliseconds, int? Frames) ParseDashboardArguments(string[] args)
+{
+    if (args.Length > 3)
+    {
+        throw new ArgumentException("Invalid dashboard arguments.");
+    }
+
+    string? configPath = null;
+    int? refreshOverrideMilliseconds = null;
+    int? frames = args.Length > 2
+        ? ParseInt(args, 2, "frames", 1, int.MaxValue)
+        : null;
+
+    if (args.Length > 1)
+    {
+        if (int.TryParse(args[1], out _))
+        {
+            refreshOverrideMilliseconds = ParseInt(args, 1, "interval-ms", 250, 60000);
+        }
+        else
+        {
+            configPath = args[1];
+        }
+    }
+
+    return (configPath, refreshOverrideMilliseconds, frames);
 }
 
 static void RenderLayoutTest(MonitorMini deck)
 {
     DashboardMetric[] labels =
     [
-        new("CPU", "CPU", 100, new RgbColor(0, 200, 255)),
-        new("RAM", "RAM", 100, new RgbColor(120, 220, 80)),
-        new("GPU", "GPU", 100, new RgbColor(170, 130, 255)),
-        new("HDD", "HDD", 100, new RgbColor(255, 190, 70)),
-        new("UP", "UP", 100, new RgbColor(255, 100, 100)),
-        new("DOWN", "DOWN", 100, new RgbColor(80, 170, 255))
+        new("cpu", "CPU", "CPU", 100, new RgbColor(0, 200, 255)),
+        new("ram", "RAM", "RAM", 100, new RgbColor(120, 220, 80)),
+        new("gpu", "GPU", "GPU", 100, new RgbColor(170, 130, 255)),
+        new("disk", "HDD", "HDD", 100, new RgbColor(255, 190, 70)),
+        new("upload", "UP", "UP", 100, new RgbColor(255, 100, 100)),
+        new("download", "DOWN", "DOWN", 100, new RgbColor(80, 170, 255))
     ];
 
     for (int key = 0; key < labels.Length; key++)
@@ -198,7 +222,7 @@ static void PrintHelp()
       clear
       color <key 0-5> <r 0-255> <g 0-255> <b 0-255>
       watch
-      dashboard [interval-ms] [frames]
+      dashboard [config-path|interval-ms] [frames]
       layout-test
     """);
 }

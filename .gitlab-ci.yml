@@ -1,0 +1,76 @@
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+stages:
+  - test
+  - report
+  - gate
+
+variables:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  MINIMUM_COVERAGE: "85"
+  COVERAGE_PACKAGE_NAME: "sdmonitor"
+
+coverage:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+  script:
+    - dotnet tool install dotnet-coverage --tool-path ./.tools
+    - dotnet build SDMonitor.slnx
+    - dotnet run --project tests/SDMonitor.Tests/SDMonitor.Tests.csproj --no-build
+    - mkdir -p artifacts/coverage
+    - ./.tools/dotnet-coverage collect --output artifacts/coverage/cobertura.xml --output-format cobertura "dotnet run --project tests/SDMonitor.Tests/SDMonitor.Tests.csproj --no-build"
+    - ENFORCE_COVERAGE_THRESHOLD=false bash scripts/check-coverage.sh artifacts/coverage/cobertura.xml
+  coverage: '/COVERAGE:\s+([0-9]+(?:\.[0-9]+)?)%/'
+  artifacts:
+    when: always
+    paths:
+      - artifacts/coverage/cobertura.xml
+      - artifacts/coverage/coverage.env
+    reports:
+      dotenv: artifacts/coverage/coverage.env
+      coverage_report:
+        coverage_format: cobertura
+        path: artifacts/coverage/cobertura.xml
+
+post_coverage_comment:
+  stage: report
+  image: curlimages/curl:8.11.1
+  needs:
+    - job: coverage
+      artifacts: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - sh scripts/post-gitlab-coverage-comment.sh
+
+coverage_gate:
+  stage: gate
+  image: alpine:3.21
+  needs:
+    - job: coverage
+      artifacts: true
+    - job: post_coverage_comment
+      optional: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+  script:
+    - . artifacts/coverage/coverage.env
+    - |
+      awk -v coverage="$COVERAGE_PERCENT" -v minimum="$MINIMUM_COVERAGE" 'BEGIN {
+        printf "COVERAGE: %.2f%%\n", coverage;
+        if (coverage + 0 < minimum + 0) {
+          printf "Coverage %.2f%% is below required %.2f%%.\n", coverage, minimum > "/dev/stderr";
+          exit 1;
+        }
+      }'
