@@ -47,7 +47,16 @@ foreach ($rid in $Runtime) {
         -p:FileVersion=$fileVersion `
         -p:InformationalVersion=$informationalVersion
 
-    Copy-Item (Join-Path $ridOutput "sdmonitor$extension") $artifact -Force
+    $publishedBinary = Join-Path $ridOutput "SDMonitor$extension"
+    if (-not (Test-Path $publishedBinary)) {
+        $publishedBinary = Join-Path $ridOutput "sdmonitor$extension"
+    }
+
+    if (-not (Test-Path $publishedBinary)) {
+        throw "Published binary not found in $ridOutput"
+    }
+
+    Copy-Item $publishedBinary $artifact -Force
     if (-not $rid.StartsWith("win-")) {
         chmod +x $artifact
     }

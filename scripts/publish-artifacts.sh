@@ -50,7 +50,17 @@ for rid in "${rids[@]}"; do
         -p:FileVersion="$file_version" \
         -p:InformationalVersion="$informational_version"
 
-    cp "$rid_output/sdmonitor$extension" "$artifact"
+    published_binary="$rid_output/SDMonitor$extension"
+    if [[ ! -f "$published_binary" ]]; then
+        published_binary="$rid_output/sdmonitor$extension"
+    fi
+
+    if [[ ! -f "$published_binary" ]]; then
+        echo "Published binary not found in $rid_output" >&2
+        exit 1
+    fi
+
+    cp "$published_binary" "$artifact"
     if [[ "$rid" != win-* ]]; then
         chmod +x "$artifact"
     fi
