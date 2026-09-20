@@ -1,0 +1,130 @@
+<Window
+    x:Class="SDMonitor.Simulator.Views.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:SDMonitor.Simulator.ViewModels"
+    Title="SDMonitor Stream Deck Simulator"
+    Width="820"
+    Height="560"
+    MinWidth="720"
+    MinHeight="500"
+    x:DataType="vm:MainWindowViewModel"
+    Background="#101115">
+  <Design.DataContext>
+    <vm:MainWindowViewModel />
+  </Design.DataContext>
+
+  <Grid RowDefinitions="Auto,*" Margin="30">
+    <Grid ColumnDefinitions="*,Auto" Margin="4,0,4,18">
+      <StackPanel Spacing="2">
+        <TextBlock
+            Text="{Binding Title}"
+            Foreground="#F4F7FA"
+            FontSize="22"
+            FontWeight="SemiBold" />
+        <TextBlock
+            Text="{Binding StatusText}"
+            Foreground="#7F8996"
+            FontSize="12" />
+      </StackPanel>
+
+      <Border
+          Grid.Column="1"
+          Background="#171A20"
+          BorderBrush="#2E3440"
+          BorderThickness="1"
+          CornerRadius="8"
+          Padding="12,7"
+          VerticalAlignment="Center">
+        <TextBlock
+            Text="{Binding RefreshText}"
+            Foreground="#B9C3D0"
+            FontSize="12"
+            FontWeight="Medium" />
+      </Border>
+    </Grid>
+
+    <Border
+        Grid.Row="1"
+        Width="598"
+        Height="374"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center"
+        Padding="34"
+        Background="#090A0D"
+        BorderBrush="#20242B"
+        BorderThickness="2"
+        CornerRadius="28"
+        BoxShadow="0 22 70 0 #AA000000">
+      <Border
+          Padding="24"
+          Background="#050607"
+          BorderBrush="#161A20"
+          BorderThickness="1"
+          CornerRadius="20">
+        <ItemsControl ItemsSource="{Binding Keys}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Rows="2" Columns="3" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:StreamDeckKeyViewModel">
+              <Border
+                  Width="138"
+                  Height="118"
+                  Margin="9"
+                  Padding="10"
+                  Background="#11151B"
+                  BorderBrush="#010101"
+                  BorderThickness="3"
+                  CornerRadius="14"
+                  BoxShadow="0 6 16 0 #CC000000">
+                <Border
+                    Background="{Binding BackgroundBrush}"
+                    BorderBrush="{Binding BorderBrush}"
+                    BorderThickness="2"
+                    CornerRadius="9"
+                    ClipToBounds="True">
+                  <Grid RowDefinitions="Auto,*,Auto" Margin="10">
+                    <TextBlock
+                        Text="{Binding Title}"
+                        Foreground="{Binding TitleBrush}"
+                        FontSize="{Binding TitleFontSize}"
+                        FontWeight="SemiBold"
+                        HorizontalAlignment="Center"
+                        TextTrimming="CharacterEllipsis" />
+
+                    <TextBlock
+                        Grid.Row="1"
+                        Text="{Binding Value}"
+                        Foreground="{Binding ValueBrush}"
+                        FontSize="{Binding ValueFontSize}"
+                        FontWeight="Bold"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        TextTrimming="CharacterEllipsis" />
+
+                    <Border
+                        Grid.Row="2"
+                        Height="{Binding ProgressHeight}"
+                        Background="#242A33"
+                        CornerRadius="2"
+                        ClipToBounds="True">
+                      <Border
+                          Width="{Binding ProgressWidth}"
+                          Background="{Binding ProgressBrush}"
+                          HorizontalAlignment="Left"
+                          CornerRadius="2" />
+                    </Border>
+                  </Grid>
+                </Border>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Border>
+    </Border>
+  </Grid>
+</Window>

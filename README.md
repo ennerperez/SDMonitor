@@ -71,5 +71,12 @@ per-user config directory: `~/.config/SDMonitor` on Linux,
 `title`, colors, text sizes, spacing, bottom progress bar height, and
 `refreshMilliseconds`.
 
+The Avalonia simulator can mirror the six-key dashboard without opening the
+Stream Deck HID device:
+
+```bash
+dotnet run --project src/SDMonitor.Simulator/SDMonitor.Simulator.csproj
+```
+
 See [release docs](docs/RELEASE.md) and [stack docs](docs/STACK.md) for build
 and artifact details.

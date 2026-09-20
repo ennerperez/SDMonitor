@@ -4,7 +4,7 @@
 
 - .NET 10
 - C#
-- Single console project with tests in a separate test project
+- Console project, Avalonia simulator project, and tests in a separate test project
 
 ## Device Access
 
@@ -34,6 +34,7 @@
 - GPU usage uses `nvidia-smi` on Linux/Windows and `ioreg` on macOS when present; otherwise tile shows `N/A`.
 - Tile renderer is pure C# pixel drawing; no `System.Drawing` dependency.
 - Network upload/download bars auto-scale to the peak rate observed during the current dashboard run.
+- Avalonia simulator mirrors the six-key Stream Deck Mini dashboard without opening the HID device.
 
 ## Release Notes
 

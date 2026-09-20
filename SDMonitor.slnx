@@ -21,6 +21,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/SDMonitor/SDMonitor.csproj" />
+    <Project Path="src/SDMonitor.Simulator/SDMonitor.Simulator.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SDMonitor.Tests/SDMonitor.Tests.csproj" />
