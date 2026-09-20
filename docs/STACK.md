@@ -30,7 +30,8 @@
 - Dashboard maps configured metrics to CPU, RAM, GPU, root disk, network upload, and network download.
 - Linux metrics come from `/proc/stat`, `/proc/meminfo`, `/proc/net/dev`, and `DriveInfo`.
 - Windows metrics come from process CPU time, `GlobalMemoryStatusEx`, `DriveInfo`, and `NetworkInterface`.
-- GPU usage uses `nvidia-smi` when present; otherwise tile shows `N/A`.
+- macOS metrics come from `top`, `sysctl`, `vm_stat`, `ioreg`, `NetworkInterface`, and `DriveInfo`.
+- GPU usage uses `nvidia-smi` on Linux/Windows and `ioreg` on macOS when present; otherwise tile shows `N/A`.
 - Tile renderer is pure C# pixel drawing; no `System.Drawing` dependency.
 - Network upload/download bars auto-scale to the peak rate observed during the current dashboard run.
 

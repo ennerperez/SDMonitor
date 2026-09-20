@@ -6,9 +6,17 @@ namespace SDMonitor
     {
         public static IHardwareSampler Create()
         {
-            return OperatingSystem.IsWindows()
-                ? new WindowsHardwareSampler()
-                : new LinuxHardwareSampler();
+            if (OperatingSystem.IsWindows())
+            {
+                return new WindowsHardwareSampler();
+            }
+
+            if (OperatingSystem.IsMacOS())
+            {
+                return new MacOSHardwareSampler();
+            }
+
+            return new LinuxHardwareSampler();
         }
     }
 }
