@@ -209,7 +209,7 @@ create_flatpak() {
 }
 MANIFEST
 
-    flatpak-builder --force-clean --disable-rofiles-fuse --state-dir="$state" --repo="$repo" "$build" "$manifest" >/dev/null
+    flatpak-builder --force-clean --disable-rofiles-fuse --state-dir="$state" --repo="$repo" --default-branch="$flatpak_branch" "$build" "$manifest" >/dev/null
     flatpak build-bundle "$repo" "$artifact" "$app_id" "$flatpak_branch" >/dev/null
     echo "created $artifact"
 }
