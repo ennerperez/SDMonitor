@@ -11,6 +11,7 @@ if [ "${#rids[@]}" -eq 0 ]; then
     rids=("win-x64" "linux-x64" "osx-arm64")
 fi
 
+scripts/install-packaging-tools.sh "${rids[@]}"
 dotnet tool restore --verbosity quiet >/dev/null
 
 gitversion_variable() {
@@ -74,10 +75,6 @@ for rid in "${rids[@]}"; do
     fi
 
     if [[ "$rid" == osx-* ]]; then
-        if command -v hdiutil >/dev/null 2>&1; then
-            scripts/package-macos.sh "$published_binary" "$version" "$rid_dist" "$rid" "$file_version"
-        else
-            echo "skipped macOS DMG for $rid: hdiutil not available"
-        fi
+        scripts/package-macos.sh "$published_binary" "$version" "$rid_dist" "$rid" "$file_version"
     fi
 done

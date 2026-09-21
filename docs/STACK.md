@@ -44,7 +44,8 @@
 - Supported runtime identifiers: `win-x64`, `linux-x64`, and `osx-arm64`.
 - Linux `linux-x64` publish creates raw binary, `.deb`, `.rpm`, `.flatpak`, and `.AppImage`.
 - Linux package assets live in `packaging/linux/`.
-- macOS `osx-arm64` publish creates raw binary and `sdmonitor.dmg` when run on macOS.
+- Linux package prerequisites are bootstrapped by `scripts/install-packaging-tools.sh`.
+- macOS `osx-arm64` publish creates raw binary and `sdmonitor.dmg` from Linux or macOS.
 - macOS package assets live in `packaging/macos/`.
 - Local publish scripts write distributable files to `artifacts/dist/<runtime>/` with stable `sdmonitor` filenames.
 - GitHub Actions is split into `ci.yml`, `build.yml`, `package.yml`, and `release.yml`.

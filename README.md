@@ -51,28 +51,28 @@ PowerShell:
 
 Artifacts are written to `artifacts/dist/<runtime>/`. Versions are generated
 with GitVersion and kept in executable/package metadata. Linux package
-generation requires `dpkg-deb`, `fakeroot`,
-`rpmbuild`, `flatpak-builder`, `flatpak`, and `curl`; `appimagetool` is
-downloaded to `artifacts/tools/` when not already installed.
-macOS DMG generation requires `hdiutil`; non-macOS hosts skip only the DMG.
+generation automatically installs or verifies `dpkg-deb`, `fakeroot`,
+`rpmbuild`, `flatpak-builder`, `flatpak`, `curl`, the Flatpak runtime/SDK, and
+`appimagetool` before publish starts. macOS DMG generation on Linux uses
+`mkfs.hfsplus` from `hfsprogs`; on macOS it uses `hdiutil`.
 
 Install Linux packaging tools on Debian/Ubuntu:
 
 ```bash
 sudo apt update
-sudo apt install curl dpkg fakeroot flatpak flatpak-builder rpm
+sudo apt install curl dpkg fakeroot flatpak flatpak-builder hfsprogs rpm
 ```
 
 Install Linux packaging tools on Fedora/Red Hat:
 
 ```bash
-sudo dnf install curl dpkg fakeroot flatpak flatpak-builder rpm-build
+sudo dnf install curl dpkg fakeroot flatpak flatpak-builder hfsplus-tools rpm-build
 ```
 
 Install Linux packaging tools on Arch:
 
 ```bash
-sudo pacman -S curl dpkg fakeroot flatpak flatpak-builder rpm-tools
+sudo pacman -S curl dpkg fakeroot flatpak flatpak-builder hfsprogs rpm-tools
 ```
 
 Install Flatpak runtime used by local packaging:

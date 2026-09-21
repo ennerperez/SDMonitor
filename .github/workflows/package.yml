@@ -17,7 +17,7 @@ jobs:
           - rid: linux-x64
             os: ubuntu-latest
           - rid: osx-arm64
-            os: macos-latest
+            os: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -33,16 +33,11 @@ jobs:
       - name: Restore tools
         run: dotnet tool restore
 
-      - name: Install Linux packaging tools
-        if: ${{ matrix.rid == 'linux-x64' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y curl dpkg fakeroot flatpak flatpak-builder rpm
-          sudo flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          sudo flatpak install -y --system flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
-
       - name: Allow publish script execution
-        run: chmod +x scripts/publish-artifacts.sh scripts/package-linux.sh scripts/package-macos.sh
+        run: chmod +x scripts/install-packaging-tools.sh scripts/publish-artifacts.sh scripts/package-linux.sh scripts/package-macos.sh
+
+      - name: Install packaging tools
+        run: scripts/install-packaging-tools.sh ${{ matrix.rid }}
 
       - name: Publish ${{ matrix.rid }}
         run: scripts/publish-artifacts.sh ${{ matrix.rid }}

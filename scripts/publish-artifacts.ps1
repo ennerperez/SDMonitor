@@ -8,6 +8,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$bash = Get-Command bash -ErrorAction SilentlyContinue
+if ($bash) {
+    & $bash.Source "scripts/install-packaging-tools.sh" @Runtime
+    if ($LASTEXITCODE -ne 0) {
+        throw "Packaging tool installation failed"
+    }
+}
+
 dotnet tool restore --verbosity quiet | Out-Null
 
 function Get-GitVersionVariable {
@@ -81,20 +89,14 @@ foreach ($rid in $Runtime) {
     }
 
     if ($rid.StartsWith("osx-")) {
-        $hdiutil = Get-Command hdiutil -ErrorAction SilentlyContinue
-        if ($hdiutil) {
-            $bash = Get-Command bash -ErrorAction SilentlyContinue
-            if (-not $bash) {
-                throw "bash is required to generate macOS DMG packages"
-            }
-
-            & $bash.Source "scripts/package-macos.sh" $publishedBinary $version $ridDist $rid $fileVersion
-            if ($LASTEXITCODE -ne 0) {
-                throw "macOS DMG package generation failed"
-            }
+        $bash = Get-Command bash -ErrorAction SilentlyContinue
+        if (-not $bash) {
+            throw "bash is required to generate macOS DMG packages"
         }
-        else {
-            Write-Output "skipped macOS DMG for ${rid}: hdiutil not available"
+
+        & $bash.Source "scripts/package-macos.sh" $publishedBinary $version $ridDist $rid $fileVersion
+        if ($LASTEXITCODE -ne 0) {
+            throw "macOS DMG package generation failed"
         }
     }
 }

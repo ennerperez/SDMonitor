@@ -17,8 +17,15 @@ make_abs() {
 require_command() {
     if ! command -v "$1" >/dev/null 2>&1; then
         echo "Missing required command: $1" >&2
-        echo "macOS DMG packaging must run on macOS with hdiutil available." >&2
         exit 1
+    fi
+}
+
+run_root() {
+    if [[ "$(id -u)" -eq 0 ]]; then
+        "$@"
+    else
+        sudo "$@"
     fi
 }
 
@@ -49,11 +56,10 @@ case "$rid" in
         ;;
 esac
 
-require_command hdiutil
-
 work="$package_root/$rid"
 bundle="$work/$bundle_name"
 dmg_root="$work/dmg-root"
+mount_root="$work/mount"
 artifact="$dist_root/$package_name.dmg"
 
 rm -rf "$work"
@@ -108,12 +114,66 @@ PLIST
 cp -R "$bundle" "$dmg_root/$bundle_name"
 ln -s /Applications "$dmg_root/Applications"
 
+create_dmg_with_hdiutil() {
+    hdiutil create \
+        -volname "$display_name" \
+        -srcfolder "$dmg_root" \
+        -ov \
+        -format UDZO \
+        "$artifact" >/dev/null
+}
+
+create_dmg_with_hfsplus() {
+    require_command mkfs.hfsplus
+    require_command mount
+    require_command umount
+
+    if [[ "$(id -u)" -ne 0 ]]; then
+        require_command sudo
+        if ! sudo -n true >/dev/null 2>&1; then
+            echo "Linux DMG packaging requires passwordless sudo for loop mount." >&2
+            exit 1
+        fi
+    fi
+
+    local size_kb
+    local size_mb
+    local mounted=0
+
+    size_kb="$(du -sk "$dmg_root" | awk '{print $1}')"
+    size_mb=$((size_kb / 1024 + 64))
+    if (( size_mb < 96 )); then
+        size_mb=96
+    fi
+
+    mkdir -p "$mount_root"
+    dd if=/dev/zero of="$artifact" bs=1M count="$size_mb" status=none
+    mkfs.hfsplus -v "$display_name" "$artifact" >/dev/null
+
+    cleanup_mount() {
+        if [[ "${mounted:-0}" -eq 1 ]]; then
+            run_root umount "$mount_root" >/dev/null 2>&1 || true
+        fi
+    }
+    trap cleanup_mount EXIT
+
+    run_root mount -o loop "$artifact" "$mount_root"
+    mounted=1
+    run_root cp -a "$dmg_root/." "$mount_root/"
+    sync
+    run_root umount "$mount_root"
+    mounted=0
+    trap - EXIT
+}
+
 rm -f "$artifact"
-hdiutil create \
-    -volname "$display_name" \
-    -srcfolder "$dmg_root" \
-    -ov \
-    -format UDZO \
-    "$artifact" >/dev/null
+if command -v hdiutil >/dev/null 2>&1; then
+    create_dmg_with_hdiutil
+elif [[ "$(uname -s)" == "Linux" ]]; then
+    create_dmg_with_hfsplus
+else
+    echo "DMG packaging requires hdiutil on macOS or mkfs.hfsplus on Linux." >&2
+    exit 1
+fi
 
 echo "created $artifact"
