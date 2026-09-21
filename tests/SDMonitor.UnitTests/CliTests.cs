@@ -26,7 +26,13 @@ namespace SDMonitor.UnitTests
 
         private static Process StartCli(string arguments)
         {
-            var executable = Path.Combine(AppContext.BaseDirectory, "sdmonitor");
+            var executableName = OperatingSystem.IsWindows() ? "SDMonitor.exe" : "SDMonitor";
+            var executable = Path.Combine(AppContext.BaseDirectory, executableName);
+            if (!File.Exists(executable))
+            {
+                executable = Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? "sdmonitor.exe" : "sdmonitor");
+            }
+
             return Process.Start(new ProcessStartInfo
             {
                 FileName = executable,
