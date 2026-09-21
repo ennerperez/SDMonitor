@@ -59,7 +59,7 @@ Linux package generation requires:
 - `rpmbuild` for Fedora/Red Hat packages.
 - `flatpak-builder` and `flatpak` for Flatpak bundles.
 - `curl` when `appimagetool` is not installed locally.
-- `mkfs.hfsplus` from `hfsprogs`/`hfsplus-tools` for Linux-created macOS DMGs.
+- `mkisofs` with HFS+ support from `xorriso`, or `mkfs.hfsplus` from `hfsprogs`/`hfsplus-tools`, for Linux-created macOS DMGs.
 
 Publish scripts run `scripts/install-packaging-tools.sh` before publish starts.
 On Linux, it installs missing tools with `apt-get`, `dnf`, or `pacman`, installs
@@ -73,8 +73,7 @@ packages are generated locally.
 Flatpak packaging needs a working Flatpak sandbox/user namespace. WSL or locked
 down containers can fail with `Unable to allocate instance id`.
 
-macOS DMG generation uses `hdiutil` on macOS or an HFS+ loop image with
-`mkfs.hfsplus` on Linux.
+macOS DMG generation uses `hdiutil` on macOS, `mkisofs` with HFS+ support on Linux when available, or an HFS+ loop image with `mkfs.hfsplus` on Linux.
 
 ## Install
 

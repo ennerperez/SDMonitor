@@ -37,6 +37,19 @@ run_root() {
     fi
 }
 
+has_mkisofs_hfsplus() {
+    local tool
+    local tool_path
+
+    for tool in xorrisofs mkisofs genisoimage; do
+        if tool_path="$(command -v "$tool" 2>/dev/null)" && "$tool_path" --help 2>&1 | grep -q -- "-hfsplus"; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 install_linux_packages() {
     local missing=()
     local command_name
@@ -146,29 +159,29 @@ check_macos_tools() {
     fi
 
     if [[ "$(uname -s)" == "Linux" ]]; then
-        if command -v mkfs.hfsplus >/dev/null 2>&1; then
+        if has_mkisofs_hfsplus || command -v mkfs.hfsplus >/dev/null 2>&1; then
             return
         fi
 
-        echo "installing Linux DMG tool: mkfs.hfsplus"
+        echo "installing Linux DMG tool: xorriso"
         if command -v apt-get >/dev/null 2>&1; then
             run_root apt-get update
-            run_root apt-get install -y hfsprogs
+            run_root apt-get install -y xorriso
             return
         fi
 
         if command -v dnf >/dev/null 2>&1; then
-            run_root dnf install -y hfsplus-tools
+            run_root dnf install -y xorriso
             return
         fi
 
         if command -v pacman >/dev/null 2>&1; then
-            run_root pacman -Sy --needed --noconfirm hfsprogs
+            run_root pacman -Sy --needed --noconfirm xorriso
             return
         fi
 
-        echo "Missing Linux DMG tool: mkfs.hfsplus" >&2
-        echo "Install hfsprogs or hfsplus-tools, then rerun publish." >&2
+        echo "Missing Linux DMG tool: mkisofs with HFS+ support or mkfs.hfsplus" >&2
+        echo "Install xorriso, hfsprogs, or hfsplus-tools, then rerun publish." >&2
         exit 1
     fi
 

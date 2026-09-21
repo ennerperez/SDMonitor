@@ -54,25 +54,26 @@ with GitVersion and kept in executable/package metadata. Linux package
 generation automatically installs or verifies `dpkg-deb`, `fakeroot`,
 `rpmbuild`, `flatpak-builder`, `flatpak`, `curl`, the Flatpak runtime/SDK, and
 `appimagetool` before publish starts. macOS DMG generation on Linux uses
-`mkfs.hfsplus` from `hfsprogs`; on macOS it uses `hdiutil`.
+`mkisofs` with HFS+ support from `xorriso`, falling back to `mkfs.hfsplus`
+from `hfsprogs`; on macOS it uses `hdiutil`.
 
 Install Linux packaging tools on Debian/Ubuntu:
 
 ```bash
 sudo apt update
-sudo apt install curl dpkg fakeroot flatpak flatpak-builder hfsprogs rpm
+sudo apt install curl dpkg fakeroot flatpak flatpak-builder xorriso rpm
 ```
 
 Install Linux packaging tools on Fedora/Red Hat:
 
 ```bash
-sudo dnf install curl dpkg fakeroot flatpak flatpak-builder hfsplus-tools rpm-build
+sudo dnf install curl dpkg fakeroot flatpak flatpak-builder xorriso rpm-build
 ```
 
 Install Linux packaging tools on Arch:
 
 ```bash
-sudo pacman -S curl dpkg fakeroot flatpak flatpak-builder hfsprogs rpm-tools
+sudo pacman -S curl dpkg fakeroot flatpak flatpak-builder xorriso rpm-tools
 ```
 
 Install Flatpak runtime used by local packaging:

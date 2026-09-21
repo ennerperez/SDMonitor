@@ -29,6 +29,20 @@ run_root() {
     fi
 }
 
+find_mkisofs_hfsplus() {
+    local tool
+    local tool_path
+
+    for tool in xorrisofs mkisofs genisoimage; do
+        if tool_path="$(command -v "$tool" 2>/dev/null)" && "$tool_path" --help 2>&1 | grep -q -- "-hfsplus"; then
+            printf '%s\n' "$tool_path"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 package_name="${PACKAGE_NAME:-sdmonitor}"
 bundle_name="${MACOS_BUNDLE_NAME:-SDMonitor.app}"
 bundle_id="${MACOS_BUNDLE_ID:-dev.ennerperez.sdmonitor}"
@@ -123,6 +137,13 @@ create_dmg_with_hdiutil() {
         "$artifact" >/dev/null
 }
 
+create_dmg_with_mkisofs() {
+    local tool
+
+    tool="$(find_mkisofs_hfsplus)"
+    "$tool" -quiet -hfsplus -R -V "$display_name" -o "$artifact" "$dmg_root" >/dev/null
+}
+
 create_dmg_with_hfsplus() {
     require_command mkfs.hfsplus
     require_command mount
@@ -169,10 +190,12 @@ create_dmg_with_hfsplus() {
 rm -f "$artifact"
 if command -v hdiutil >/dev/null 2>&1; then
     create_dmg_with_hdiutil
+elif [[ "$(uname -s)" == "Linux" ]] && find_mkisofs_hfsplus >/dev/null; then
+    create_dmg_with_mkisofs
 elif [[ "$(uname -s)" == "Linux" ]]; then
     create_dmg_with_hfsplus
 else
-    echo "DMG packaging requires hdiutil on macOS or mkfs.hfsplus on Linux." >&2
+    echo "DMG packaging requires hdiutil on macOS, or mkisofs with HFS+ support or mkfs.hfsplus on Linux." >&2
     exit 1
 fi
 
