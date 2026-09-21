@@ -7,14 +7,17 @@ on:
 jobs:
   package:
     name: Package ${{ matrix.rid }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        rid:
-          - win-x64
-          - linux-x64
-          - osx-arm64
+        include:
+          - rid: win-x64
+            os: ubuntu-latest
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: osx-arm64
+            os: macos-latest
 
     steps:
       - name: Checkout
@@ -30,15 +33,16 @@ jobs:
       - name: Restore tools
         run: dotnet tool restore
 
-      - name: Resolve version
-        shell: bash
+      - name: Install Linux packaging tools
+        if: ${{ matrix.rid == 'linux-x64' }}
         run: |
-          version="$(dotnet tool run dotnet-gitversion -- /output json /showvariable SemVer /nocache)"
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-          echo "Version: $version"
+          sudo apt-get update
+          sudo apt-get install -y curl dpkg fakeroot flatpak flatpak-builder rpm
+          sudo flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y --system flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
 
       - name: Allow publish script execution
-        run: chmod +x scripts/publish-artifacts.sh
+        run: chmod +x scripts/publish-artifacts.sh scripts/package-linux.sh scripts/package-macos.sh
 
       - name: Publish ${{ matrix.rid }}
         run: scripts/publish-artifacts.sh ${{ matrix.rid }}
@@ -46,6 +50,6 @@ jobs:
       - name: Upload ${{ matrix.rid }}
         uses: actions/upload-artifact@v4
         with:
-          name: sdmonitor-${{ env.VERSION }}-${{ matrix.rid }}
-          path: artifacts/dist/sdmonitor-${{ env.VERSION }}-${{ matrix.rid }}*
+          name: ${{ matrix.rid }}
+          path: artifacts/dist/${{ matrix.rid }}/
           if-no-files-found: error

@@ -43,9 +43,20 @@ jobs:
       - name: Download packages
         uses: actions/download-artifact@v4
         with:
-          pattern: sdmonitor-*
+          pattern: "*"
           path: artifacts/release
-          merge-multiple: true
+          merge-multiple: false
+
+      - name: Create platform archives
+        shell: bash
+        run: |
+          mkdir -p artifacts/release-assets
+          for dir in artifacts/release/*; do
+            if [[ -d "$dir" ]]; then
+              rid="$(basename "$dir")"
+              (cd artifacts/release && zip -qr "../release-assets/$rid.zip" "$rid")
+            fi
+          done
 
       - name: Publish release assets
         shell: bash
@@ -56,4 +67,4 @@ jobs:
               --notes "SDMonitor $RELEASE_TAG"
           fi
 
-          gh release upload "$RELEASE_TAG" artifacts/release/* --clobber
+          gh release upload "$RELEASE_TAG" artifacts/release-assets/* --clobber
