@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="console-application">
+  <id>dev.ennerperez.sdmonitor</id>
+  <name>SDMonitor</name>
+  <summary>Stream Deck Mini Hardware Monitor</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>SDMonitor controls an Elgato Stream Deck Mini and renders system metrics on its keys.</p>
+  </description>
+  <url type="homepage">https://github.com/ennerperez/SDMonitor</url>
+  <provides>
+    <binary>sdmonitor</binary>
+  </provides>
+  <launchable type="desktop-id">dev.ennerperez.sdmonitor.desktop</launchable>
+</component>

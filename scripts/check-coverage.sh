@@ -3,7 +3,7 @@ set -euo pipefail
 
 coverage_file="${1:-artifacts/coverage/cobertura.xml}"
 minimum_coverage="${MINIMUM_COVERAGE:-85}"
-package_name="${COVERAGE_PACKAGE_NAME:-sdmonitor}"
+package_name="${COVERAGE_PACKAGE_NAME:-SDMonitor}"
 enforce_threshold="${ENFORCE_COVERAGE_THRESHOLD:-true}"
 
 if [[ ! -f "$coverage_file" ]]; then

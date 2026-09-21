@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=SDMonitor
+Comment=Stream Deck Mini Hardware Monitor
+Exec=sdmonitor
+Icon=dev.ennerperez.sdmonitor
+Terminal=true
+Categories=Utility;System;HardwareSettings;
+StartupNotify=false

@@ -11,6 +11,7 @@ if [ "${#rids[@]}" -eq 0 ]; then
     rids=("win-x64" "linux-x64" "osx-arm64")
 fi
 
+scripts/install-packaging-tools.sh "${rids[@]}"
 dotnet tool restore --verbosity quiet >/dev/null
 
 gitversion_variable() {
@@ -31,9 +32,11 @@ for rid in "${rids[@]}"; do
     fi
 
     rid_output="$publish_root/$rid"
-    artifact="$dist_root/sdmonitor-$version-$rid$extension"
+    rid_dist="$dist_root/$rid"
+    artifact="$rid_dist/sdmonitor$extension"
 
-    rm -rf "$rid_output"
+    rm -rf "$rid_output" "$rid_dist"
+    mkdir -p "$rid_dist"
     dotnet publish "$project" \
         --verbosity quiet \
         --configuration "$configuration" \
@@ -66,4 +69,12 @@ for rid in "${rids[@]}"; do
     fi
 
     echo "created $artifact"
+
+    if [[ "$rid" == linux-* ]]; then
+        scripts/package-linux.sh "$published_binary" "$version" "$rid_dist" "$rid"
+    fi
+
+    if [[ "$rid" == osx-* ]]; then
+        scripts/package-macos.sh "$published_binary" "$version" "$rid_dist" "$rid" "$file_version"
+    fi
 done

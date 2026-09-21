@@ -7,14 +7,17 @@ on:
 jobs:
   package:
     name: Package ${{ matrix.rid }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        rid:
-          - win-x64
-          - linux-x64
-          - osx-arm64
+        include:
+          - rid: win-x64
+            os: ubuntu-latest
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: osx-arm64
+            os: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -30,15 +33,11 @@ jobs:
       - name: Restore tools
         run: dotnet tool restore
 
-      - name: Resolve version
-        shell: bash
-        run: |
-          version="$(dotnet tool run dotnet-gitversion -- /output json /showvariable SemVer /nocache)"
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-          echo "Version: $version"
-
       - name: Allow publish script execution
-        run: chmod +x scripts/publish-artifacts.sh
+        run: chmod +x scripts/install-packaging-tools.sh scripts/publish-artifacts.sh scripts/package-linux.sh scripts/package-macos.sh
+
+      - name: Install packaging tools
+        run: scripts/install-packaging-tools.sh ${{ matrix.rid }}
 
       - name: Publish ${{ matrix.rid }}
         run: scripts/publish-artifacts.sh ${{ matrix.rid }}
@@ -46,6 +45,6 @@ jobs:
       - name: Upload ${{ matrix.rid }}
         uses: actions/upload-artifact@v4
         with:
-          name: sdmonitor-${{ env.VERSION }}-${{ matrix.rid }}
-          path: artifacts/dist/sdmonitor-${{ env.VERSION }}-${{ matrix.rid }}*
+          name: ${{ matrix.rid }}
+          path: artifacts/dist/${{ matrix.rid }}/
           if-no-files-found: error

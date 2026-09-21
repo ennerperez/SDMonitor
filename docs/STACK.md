@@ -40,9 +40,14 @@
 
 - GitVersion generates artifact and assembly versions from Git history.
 - Publish target is the unified `src/SDMonitor/SDMonitor.csproj`.
-- Release artifacts are self-contained single-file executables.
+- Release artifacts are self-contained single-file executables plus Linux package wrappers and a macOS DMG.
 - Supported runtime identifiers: `win-x64`, `linux-x64`, and `osx-arm64`.
-- Local publish scripts write distributable files to `artifacts/dist/`.
+- Linux `linux-x64` publish creates raw binary, `.deb`, `.rpm`, `.flatpak`, and `.AppImage`.
+- Linux package assets live in `packaging/linux/`.
+- Linux package prerequisites are bootstrapped by `scripts/install-packaging-tools.sh`.
+- macOS `osx-arm64` publish creates raw binary and `sdmonitor.dmg` from Linux or macOS.
+- macOS package assets live in `packaging/macos/`.
+- Local publish scripts write distributable files to `artifacts/dist/<runtime>/` with stable `sdmonitor` filenames.
 - GitHub Actions is split into `ci.yml`, `build.yml`, `package.yml`, and `release.yml`.
 
 ## Current Environment Notes

@@ -8,6 +8,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$bash = Get-Command bash -ErrorAction SilentlyContinue
+if ($bash) {
+    & $bash.Source "scripts/install-packaging-tools.sh" @Runtime
+    if ($LASTEXITCODE -ne 0) {
+        throw "Packaging tool installation failed"
+    }
+}
+
 dotnet tool restore --verbosity quiet | Out-Null
 
 function Get-GitVersionVariable {
@@ -25,11 +33,16 @@ New-Item -ItemType Directory -Force -Path $PublishRoot, $DistRoot | Out-Null
 foreach ($rid in $Runtime) {
     $extension = if ($rid.StartsWith("win-")) { ".exe" } else { "" }
     $ridOutput = Join-Path $PublishRoot $rid
-    $artifact = Join-Path $DistRoot "sdmonitor-$version-$rid$extension"
+    $ridDist = Join-Path $DistRoot $rid
+    $artifact = Join-Path $ridDist "sdmonitor$extension"
 
     if (Test-Path $ridOutput) {
         Remove-Item -Recurse -Force $ridOutput
     }
+    if (Test-Path $ridDist) {
+        Remove-Item -Recurse -Force $ridDist
+    }
+    New-Item -ItemType Directory -Force -Path $ridDist | Out-Null
 
     dotnet publish $Project `
         --verbosity quiet `
@@ -62,4 +75,28 @@ foreach ($rid in $Runtime) {
     }
 
     Write-Output "created $artifact"
+
+    if ($rid.StartsWith("linux-")) {
+        $bash = Get-Command bash -ErrorAction SilentlyContinue
+        if (-not $bash) {
+            throw "bash is required to generate Linux .deb, .rpm, .flatpak, and .AppImage packages"
+        }
+
+        & $bash.Source "scripts/package-linux.sh" $publishedBinary $version $ridDist $rid
+        if ($LASTEXITCODE -ne 0) {
+            throw "Linux package generation failed"
+        }
+    }
+
+    if ($rid.StartsWith("osx-")) {
+        $bash = Get-Command bash -ErrorAction SilentlyContinue
+        if (-not $bash) {
+            throw "bash is required to generate macOS DMG packages"
+        }
+
+        & $bash.Source "scripts/package-macos.sh" $publishedBinary $version $ridDist $rid $fileVersion
+        if ($LASTEXITCODE -ne 0) {
+            throw "macOS DMG package generation failed"
+        }
+    }
 }
