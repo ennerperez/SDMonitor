@@ -1,3 +1,5 @@
+![](.editoricon.png)
+
 # SDMonitor
 
 SDMonitor controls an Elgato Stream Deck Mini and can render a small hardware
@@ -8,22 +10,29 @@ dashboard on the six keys.
 Download the artifact for your platform from the `Package` workflow or from a
 GitHub Release:
 
-- Windows x64: `sdmonitor-<version>-win-x64.exe`
-- Linux x64: `sdmonitor-<version>-linux-x64`
-- Osx Apple Silicon: `sdmonitor-<version>-osx-arm64`
+- GitHub Releases publish platform archives named `win-x64.zip`, `linux-x64.zip`,
+  and `osx-arm64.zip`.
+- Windows x64: `win-x64/sdmonitor.exe`
+- Linux x64: `linux-x64/sdmonitor`
+- Debian/Ubuntu x64: `linux-x64/sdmonitor.deb`
+- Fedora/Red Hat x64: `linux-x64/sdmonitor.rpm`
+- Other Linux distros: `linux-x64/sdmonitor.flatpak`
+- Portable Linux x64: `linux-x64/sdmonitor.AppImage`
+- Osx Apple Silicon: `osx-arm64/sdmonitor`
+- Osx DMG: `osx-arm64/sdmonitor.dmg`
 
 Linux/Osx quick install:
 
 ```bash
-chmod +x sdmonitor-<version>-linux-x64
-sudo install -m 755 sdmonitor-<version>-linux-x64 /usr/local/bin/sdmonitor
+chmod +x linux-x64/sdmonitor
+sudo install -m 755 linux-x64/sdmonitor /usr/local/bin/sdmonitor
 ```
 
-Windows quick install:
+Windows quick installation:
 
 ```powershell
 New-Item -ItemType Directory -Force "$env:LOCALAPPDATA\SDMonitor" | Out-Null
-Copy-Item .\sdmonitor-<version>-win-x64.exe "$env:LOCALAPPDATA\SDMonitor\sdmonitor.exe"
+Copy-Item .\win-x64\sdmonitor.exe "$env:LOCALAPPDATA\SDMonitor\sdmonitor.exe"
 ```
 
 ## Local Publish
@@ -40,8 +49,41 @@ PowerShell:
 ./scripts/publish-artifacts.ps1
 ```
 
-Artifacts are written to `artifacts/dist/`. Versions are generated with
-GitVersion.
+Artifacts are written to `artifacts/dist/<runtime>/`. Versions are generated
+with GitVersion and kept in executable/package metadata. Linux package
+generation requires `dpkg-deb`, `fakeroot`,
+`rpmbuild`, `flatpak-builder`, `flatpak`, and `curl`; `appimagetool` is
+downloaded to `artifacts/tools/` when not already installed.
+macOS DMG generation requires `hdiutil`; non-macOS hosts skip only the DMG.
+
+Install Linux packaging tools on Debian/Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install curl dpkg fakeroot flatpak flatpak-builder rpm
+```
+
+Install Linux packaging tools on Fedora/Red Hat:
+
+```bash
+sudo dnf install curl dpkg fakeroot flatpak flatpak-builder rpm-build
+```
+
+Install Linux packaging tools on Arch:
+
+```bash
+sudo pacman -S curl dpkg fakeroot flatpak flatpak-builder rpm-tools
+```
+
+Install Flatpak runtime used by local packaging:
+
+```bash
+sudo flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+sudo flatpak install -y --system flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
+```
+
+Flatpak packaging also needs a working Flatpak sandbox/user namespace. WSL or
+locked down containers can fail with `Unable to allocate instance id`.
 
 ## Commands
 
